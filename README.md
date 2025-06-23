@@ -76,10 +76,11 @@ dist/       # Compiled output (ignored in git)
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a pull request
+2. Switch to the development branch
+3. Create your feature branch (`git checkout -b feature/your-feature`)
+4. Commit your changes (`git commit -m 'Add some feature'`)
+5. Push to the branch (`git push origin feature/your-feature`)
+6. Open a pull request
 
 ## License
 
