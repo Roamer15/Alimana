@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MyLoggerModule } from './my-logger/my-logger.module';
 
 @Module({
   imports: [
@@ -21,9 +22,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         database: configService.get<string>('DB_NAME'),
         autoLoadEntities: true,
         synchronize: false,
-        logging: true, // facultatif pour le debug
+        logging: true,
       }),
     }),
+    MyLoggerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
