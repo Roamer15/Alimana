@@ -6,7 +6,7 @@ import * as Joi from 'joi';
 
 dotenv.config();
 
-// 1. Typage fort
+//  Strong typing
 interface EnvVars {
   DB_HOST: string;
   DB_PORT: number;
@@ -16,7 +16,7 @@ interface EnvVars {
   TYPEORM_LOGGING: boolean;
 }
 
-// 2. Déclaration du schéma
+// Schema Declaration
 const envSchema = Joi.object<EnvVars>({
   DB_HOST: Joi.string().required(),
   DB_PORT: Joi.number().default(5432),
@@ -26,16 +26,16 @@ const envSchema = Joi.object<EnvVars>({
   TYPEORM_LOGGING: Joi.boolean().truthy('true').falsy('false').default(false),
 }).unknown();
 
-// ✅ 3. Pas de destructuring → stocker le résultat dans une variable typée
+// No destructuring → store the result in a typed variable
 const validated = envSchema.validate(process.env, { abortEarly: false });
 
 if (validated.error) {
-  throw new Error(`❌ Erreurs dans les variables d'environnement :\n${validated.error.message}`);
+  throw new Error(` Erreurs dans les variables d'environnement :\n${validated.error.message}`);
 }
 
-const env: EnvVars = validated.value; // ✅ Typage explicite, plus de `any`
+const env: EnvVars = validated.value; // Explicit typing, no more `any`
 
-// 4. Utilisation normale
+// Normal use
 const isTsEnv = __filename.endsWith('.ts');
 
 export const AppDataSource = new DataSource({

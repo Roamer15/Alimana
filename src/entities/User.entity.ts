@@ -10,7 +10,7 @@ import { StoreUser } from './store-user.entity';
 import { UserRefreshToken } from './user-refresh-token.entity';
 
 @Entity('users')
-export class Users {
+export class User {
   @PrimaryGeneratedColumn()
   id: number;
 

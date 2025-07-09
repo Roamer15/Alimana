@@ -10,7 +10,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 
-import { Users as User } from './User.entity';
+import { User } from './User.entity';
 import { Store } from './store.entity';
 import { Role } from './role.entity';
 import { Invitation } from './invitation.entity';
