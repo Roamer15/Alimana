@@ -25,7 +25,7 @@ export class CustomerReturn {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Store, (store) => store.customerReturns, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Store, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 

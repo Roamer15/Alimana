@@ -25,7 +25,7 @@ export class AuditLog {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Store, (store) => store.auditLogs, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Store, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 

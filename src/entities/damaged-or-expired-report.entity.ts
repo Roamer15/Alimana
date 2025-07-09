@@ -23,7 +23,7 @@ export class DamagedOrExpiredReport {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Store, (store) => store.damagedOrExpiredReports, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Store, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 

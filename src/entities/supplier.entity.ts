@@ -22,7 +22,7 @@ export class Supplier {
   @OneToMany(() => SupplierOrders, (order) => order.supplier)
   supplierOrders: SupplierOrders[];
 
-  @ManyToOne(() => Store, (store) => store.suppliers, { nullable: false, onDelete: 'CASCADE' })
+  @ManyToOne(() => Store, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 

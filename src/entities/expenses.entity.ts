@@ -17,7 +17,7 @@ export class Expense {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Store, (store) => store.expenses, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Store, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 

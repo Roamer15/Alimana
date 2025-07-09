@@ -27,7 +27,7 @@ export class CashRegisterSession {
   id: number;
 
   @Index()
-  @ManyToOne(() => Store, (store) => store.cashRegisterSessions)
+  @ManyToOne(() => Store)
   @JoinColumn({ name: 'store_id' })
   store: Store;
 

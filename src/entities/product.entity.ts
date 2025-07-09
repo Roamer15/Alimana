@@ -79,7 +79,7 @@ export class Product {
   @Column({ name: 'created_by_id', nullable: true })
   createdById: number;
 
-  @ManyToOne(() => Store, (store) => store.products, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Store, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 

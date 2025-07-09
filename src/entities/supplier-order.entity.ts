@@ -26,7 +26,7 @@ export class SupplierOrders {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Store, (store) => store.supplierOrders)
+  @ManyToOne(() => Store)
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
