@@ -15,29 +15,24 @@ import { Store } from './store.entity';
 import { Role } from './role.entity';
 import { Invitation } from './invitation.entity';
 import { AuditLog } from './audit-logs.entity';
-import { Sale } from './sale.entity';
-import { Expense } from './expenses.entity';
-import { InventoryMovement } from './inventory-movement.entity';
 import { CashRegisterSession } from './cash-register-session.entity';
-import { CustomerReturn } from './customer-return.entity';
-import { DamagedOrExpiredReport } from './damaged-or-expired-report.entity';
-import { SupplierOrders } from './supplier-order.entity';
-import { Supplier } from './supplier.entity';
-import { Product } from './product.entity';
+// Removed direct imports for Sale, Expense, InventoryMovement, etc.,
+// as their OneToMany relationships are being removed from StoreUser directly.
+// These entities will still exist and be managed by their own services/repositories.
 
-// État possible d’un utilisateur dans une boutique
+// Possible status of a user in a store
 export enum StoreUserStatus {
-  PENDING = 'pending', // Invitation en attente ou utilisateur pas encore actif
-  ACTIVE = 'active', // Utilisateur actif dans la boutique
-  SUSPENDED = 'suspended', // Accès suspendu
+  PENDING = 'pending', // Invitation pending or user not yet active
+  ACTIVE = 'active', // Active user in the store
+  SUSPENDED = 'suspended', // Access suspended
 }
 
 @Entity('store_users')
 export class StoreUser {
   @PrimaryGeneratedColumn()
-  id: number; // Identifiant unique
+  id: number; // Unique identifier
 
-  // Utilisateur général (de la table Users) lié à cette entrée boutique
+  // General user (from the Users table) linked to this store entry
   @ManyToOne(() => User, (user) => user.storeUsers, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   @Index()
@@ -46,7 +41,7 @@ export class StoreUser {
   @Column()
   userId: number;
 
-  // Boutique à laquelle appartient cet utilisateur
+  // Store this user belongs to
   @ManyToOne(() => Store, (store) => store.storeUsers, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'storeId' })
   @Index()
@@ -55,7 +50,7 @@ export class StoreUser {
   @Column()
   storeId: number;
 
-  // Rôle de l’utilisateur dans la boutique (admin, caissier, etc.)
+  // Role of the user within the store (admin, cashier, etc.)
   @ManyToOne(() => Role, (role) => role.storeUsers, { eager: true })
   @JoinColumn({ name: 'roleId' })
   role: Role;
@@ -63,71 +58,74 @@ export class StoreUser {
   @Column({ nullable: true })
   roleId: number;
 
-  // Statut d’activité de l’utilisateur dans cette boutique
+  // Activity status of the user in this store
   @Column({ type: 'enum', enum: StoreUserStatus, default: StoreUserStatus.PENDING })
   status: StoreUserStatus;
 
-  // Date d’entrée effective dans la boutique (après acceptation d’une invitation, par exemple)
+  // Effective date of joining the store (e.g., after accepting an invitation)
   @Column({ type: 'timestamp', nullable: true })
   joinedAt: Date;
 
   @CreateDateColumn()
-  createdAt: Date; // Date de création de la relation
+  createdAt: Date; // Date when this relation was created
 
   @UpdateDateColumn()
-  updatedAt: Date; // Date de mise à jour
+  updatedAt: Date; // Date of last update
 
-  // === Relations secondaires ===
+  // --- Relations secondaires conservées avec chargement paresseux ---
 
-  /** Invitations envoyées par cet utilisateur vers d'autres personnes */
-  @OneToMany(() => Invitation, (invitation) => invitation.invitedBy)
-  invitationsSent: Invitation[];
+  /** Invitations sent by this user to others */
+  @OneToMany(() => Invitation, (invitation) => invitation.invitedBy, { lazy: true })
+  invitationsSent: Promise<Invitation[]>; // Use Promise with lazy loading
 
-  /** produits crées par cet utilisateur dans la boutique */
-  @OneToMany(() => Product, (product) => product.createdBy)
-  products: Product[];
+  /** Actions performed by the user recorded in audit logs */
+  @OneToMany(() => AuditLog, (log) => log.storeUser, { lazy: true })
+  auditLogs: Promise<AuditLog[]>; // Use Promise with lazy loading
 
-  /** Actions faites par l'utilisateur qui sont enregistrées dans les logs d'audit */
-  @OneToMany(() => AuditLog, (log) => log.storeUser)
-  auditLogs: AuditLog[];
+  /** Cash register sessions opened or closed by this user */
+  @OneToMany(() => CashRegisterSession, (session) => session.createdBy, { lazy: true })
+  cashRegisterSessions: Promise<CashRegisterSession[]>; // Use Promise with lazy loading
 
-  /** Ventes enregistrées par cet utilisateur */
-  @OneToMany(() => Sale, (sale) => sale.createdBy)
-  sales: Sale[];
+  /** Roles created by this user for their store (if a StoreUser can create roles) */
+  // Consider if this relationship truly belongs here or if roles should be managed
+  // by a RoleService/RoleRepository that also tracks the creator.
+  @OneToMany(() => Role, (role) => role.createdBy, { lazy: true })
+  rolesCreated: Promise<Role[]>; // Use Promise with lazy loading
 
-  /** Dépenses enregistrées par cet utilisateur */
-  @OneToMany(() => Expense, (expense) => expense.createdBy)
-  expenses: Expense[];
+  // --- Relations supprimées : Accéder via les services ou dépôts dédiés ---
+  // /** Products created by this user in the store */
+  // @OneToMany(() => Product, (product) => product.createdBy)
+  // products: Product[];
 
-  /** Mouvements d’inventaire effectués par cet utilisateur */
-  @OneToMany(() => InventoryMovement, (movement) => movement.createdBy)
-  inventoryMovements: InventoryMovement[];
+  // /** Sales recorded by this user */
+  // @OneToMany(() => Sale, (sale) => sale.createdBy)
+  // sales: Sale[];
 
-  /** Sessions de caisse ouvertes ou fermées par cet utilisateur */
-  @OneToMany(() => CashRegisterSession, (session) => session.createdBy)
-  cashRegisterSessions: CashRegisterSession[];
+  // /** Expenses recorded by this user */
+  // @OneToMany(() => Expense, (expense) => expense.createdBy)
+  // expenses: Expense[];
 
-  /** Rôles créés par cet utilisateur pour sa boutique */
-  @OneToMany(() => Role, (role) => role.createdBy)
-  rolesCreated: Role[];
+  // /** Inventory movements made by this user */
+  // @OneToMany(() => InventoryMovement, (movement) => movement.createdBy)
+  // inventoryMovements: InventoryMovement[];
 
-  /** Retours clients enregistrés par cet utilisateur */
-  @OneToMany(() => CustomerReturn, (customerReturn) => customerReturn.processedBy)
-  processedReturns: CustomerReturn[];
+  // /** Customer returns processed by this user */
+  // @OneToMany(() => CustomerReturn, (customerReturn) => customerReturn.processedBy)
+  // processedReturns: CustomerReturn[];
 
-  /** Rapports de produits endommagés/périmés créés par cet utilisateur */
-  @OneToMany(() => DamagedOrExpiredReport, (report) => report.reportedBy)
-  damagedOrExpiredReports: DamagedOrExpiredReport[];
+  // /** Damaged or expired product reports created by this user */
+  // @OneToMany(() => DamagedOrExpiredReport, (report) => report.reportedBy)
+  // damagedOrExpiredReports: DamagedOrExpiredReport[];
 
-  /** Rapports de produits endommagés/périmés approver par cet utilisateur */
-  @OneToMany(() => DamagedOrExpiredReport, (report) => report.approvedBy)
-  approvedReports: DamagedOrExpiredReport[];
+  // /** Damaged or expired product reports approved by this user */
+  // @OneToMany(() => DamagedOrExpiredReport, (report) => report.approvedBy)
+  // approvedReports: DamagedOrExpiredReport[];
 
-  /** Commandes fournisseurs passées par cet utilisateur */
-  @OneToMany(() => SupplierOrders, (supplierOrders) => supplierOrders.orderedBy)
-  SupplierOrders: SupplierOrders[];
+  // /** Supplier orders placed by this user */
+  // @OneToMany(() => SupplierOrders, (supplierOrders) => supplierOrders.orderedBy)
+  // supplierOrders: SupplierOrders[];
 
-  /** Fournisseurs ajoutés ou mis à jour par cet utilisateur */
-  @OneToMany(() => Supplier, (supplier) => supplier.createdBy)
-  suppliers: Supplier[];
+  // /** Suppliers added or updated by this user */
+  // @OneToMany(() => Supplier, (supplier) => supplier.createdBy)
+  // suppliers: Supplier[];
 }

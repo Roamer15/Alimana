@@ -25,7 +25,6 @@ import { DamagedOrExpiredReport } from './damaged-or-expired-report.entity';
 import { PaymentMethod } from './payment-method.entity';
 import { CashRegister } from './cash-register.entity';
 import { Invitation } from './invitation.entity';
-
 @Entity('stores')
 export class Store {
   @PrimaryGeneratedColumn()
@@ -50,73 +49,76 @@ export class Store {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // Relation : utilisateurs (employés/admins) qui travaillent dans cette boutique
+  // Relation: users (employees/admins) working in this store
   @OneToMany(() => StoreUser, (storeUser) => storeUser.store)
   storeUsers: StoreUser[];
 
-  // Relation inverse avec les méthodes de paiement
+  // Inverse relation with payment methods
   @OneToMany(() => PaymentMethod, (method) => method.store)
   paymentMethods: PaymentMethod[];
 
-  // Relation vers Category
+  // Relation to categories
   @OneToMany(() => Category, (category) => category.store)
   categories: Category[];
 
-  // Liste des rôles (employés/admins) rattachés à cette boutique.
-  // Un magasin peut avoir plusieurs rôles définis.
+  // List of roles (employees/admins) assigned to this store.
+  // A store can have multiple defined roles.
   @OneToMany(() => Role, (role) => role.store)
   roles: Role[];
 
-  // Relation : ventes réalisées dans cette boutique
+  // Relation: sales made in this store
   @OneToMany(() => Sale, (sale) => sale.store)
   sales: Sale[];
 
-  // Relation : dépenses enregistrées dans cette boutique
+  // Relation: expenses recorded in this store
   @OneToMany(() => Expense, (expense) => expense.store)
   expenses: Expense[];
 
-  // Relation : sessions de caisse ouvertes dans cette boutique
+  // Relation: cash register sessions opened in this store
   @OneToMany(() => CashRegisterSession, (session) => session.store)
   cashRegisterSessions: CashRegisterSession[];
 
-  // Relation : paramètres spécifiques de la boutique (configuration)
+  // Relation: store-specific settings (configuration)
   @OneToMany(() => StoreSetting, (setting) => setting.store, { cascade: true })
   settings: StoreSetting[];
 
-  // Relation : logs d’audit liés à cette boutique
+  // Relation: audit logs related to this store
   @OneToMany(() => AuditLog, (auditLog) => auditLog.store)
   auditLogs: AuditLog[];
 
-  // Relation : mouvements d’inventaire liés à cette boutique (entrée, sortie, ajustement)
+  // Relation: inventory movements linked to this store (inbound, outbound, adjustments)
   @OneToMany(() => InventoryMovement, (inventoryMovement) => inventoryMovement.store)
   inventoryMovements: InventoryMovement[];
 
-  // Relation : fournisseurs liés à cette boutique
+  // Relation: suppliers linked to this store
   @OneToMany(() => Supplier, (supplier) => supplier.store)
   suppliers: Supplier[];
 
-  // Relation : commandes passées par la boutique
+  // Relation: orders placed by the store
   @OneToMany(() => SupplierOrders, (supplierOrders) => supplierOrders.store)
   supplierOrders: SupplierOrders[];
 
-  // Relation : produits liés à cette boutique
+  // Relation: products linked to this store
   @OneToMany(() => Product, (product) => product.store)
   products: Product[];
 
-  // Relation : retours clients effectués dans cette boutique
+  // Relation: customer returns processed in this store
   @OneToMany(() => CustomerReturn, (customerReturn) => customerReturn.store)
   customerReturns: CustomerReturn[];
 
-  // Relation : toutes les caise de vente disponible dans cette boutique
+  // Relation: all cash registers available in this store
   @OneToMany(() => CashRegister, (cashRegister) => cashRegister.store)
   cashRegisters: CashRegister[];
 
-  // Relation : sortir des produit deffectuer ou perimer  effectués dans cette boutique
+  // Relation: damaged or expired product reports made in this store
   @OneToMany(() => DamagedOrExpiredReport, (report) => report.store)
   damagedOrExpiredReports: DamagedOrExpiredReport[];
 
-  //invitation envoyer par cette boutique
+  // Invitations sent by this store
   @OneToMany(() => Invitation, (invitation) => invitation.store)
   invitations: Invitation[];
-  purchasesupplierOrderss: any;
+
+  // Assuming this is intended to represent purchase supplier orders linked to the store
+  @OneToMany(() => SupplierOrders, (supplierOrders) => supplierOrders.store)
+  purchaseSupplierOrders: SupplierOrders[];
 }

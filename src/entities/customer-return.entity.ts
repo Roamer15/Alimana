@@ -41,7 +41,7 @@ export class CustomerReturn {
   @Column()
   saleId: number;
 
-  @ManyToOne(() => StoreUser, (storeUser) => storeUser.processedReturns, { onDelete: 'SET NULL' })
+  @ManyToOne(() => StoreUser, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'processed_by_id' })
   processedBy: StoreUser;
 

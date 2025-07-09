@@ -14,7 +14,7 @@ import { StoreUser } from './store-user.entity';
 import { SupplierOrders } from './supplier-order.entity';
 
 @Entity('suppliers')
-@Index(['storeId', 'name'], { unique: true }) // Empêche les doublons de nom dans une même boutique
+@Index(['storeId', 'name'], { unique: true }) // Prevents duplicate names in the same store
 export class Supplier {
   @PrimaryGeneratedColumn()
   id: number;
@@ -42,7 +42,7 @@ export class Supplier {
   @Column({ type: 'text', nullable: true })
   address: string;
 
-  @ManyToOne(() => StoreUser, (storeUser) => storeUser.suppliers, {
+  @ManyToOne(() => StoreUser, {
     nullable: true,
     onDelete: 'SET NULL',
   })

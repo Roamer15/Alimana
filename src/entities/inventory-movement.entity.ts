@@ -23,13 +23,13 @@ export enum InventoryMovementType {
 }
 
 export enum InventorySourceType {
-  SALE = 'Sale',
-  PURCHASE_ORDER = 'PurchaseOrder',
-  CUSTOMER_RETURN = 'CustomerReturn',
-  SUPPLIER_RETURN = 'SupplierReturn',
-  DAMAGE_REPORT = 'DamageReport',
-  MANUAL_ADJUSTMENT = 'ManualAdjustment',
-  TRANSFER = 'Transfer',
+  SALE = 'SALE',
+  PURCHASE_ORDER = 'PURCHASE_ORDER',
+  CUSTOMER_RETURN = 'CUSTOMER_RETURN',
+  SUPPLIER_RETURN = 'SUPPLIER_RETURN',
+  DAMAGE_REPORT = 'DAMAGE_REPORT',
+  MANUAL_ADJUSTMENT = 'MANUAL_ADJUSTMENT',
+  TRANSFER = 'TRANSFER',
 }
 
 @Entity('inventory_movements')
@@ -71,12 +71,12 @@ export class InventoryMovement {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => StoreUser, { nullable: false })
+  @ManyToOne(() => StoreUser, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'created_by' })
-  createdBy: StoreUser;
+  createdBy: StoreUser | null;
 
-  @Column()
-  createById: number;
+  @Column({ nullable: true })
+  createById: number | null;
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;

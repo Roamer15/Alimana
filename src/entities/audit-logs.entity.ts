@@ -16,7 +16,7 @@ export enum AuditActionType {
   DELETE = 'DELETE',
   LOGIN = 'LOGIN',
   LOGOUT = 'LOGOUT',
-  // Ajoute d'autres actions selon besoin
+  //Add other actions as needed
 }
 
 @Entity('audit_logs')
@@ -51,7 +51,7 @@ export class AuditLog {
   //TODO: verifier le type de entityID
   @Index()
   @Column()
-  entityId: string; // Utiliser string pour plus de flexibilité (uuid, number...)
+  entityId: number; // Utiliser string pour plus de flexibilité (uuid, number...)
 
   @Column({ type: 'json', nullable: true })
   oldValue: any;

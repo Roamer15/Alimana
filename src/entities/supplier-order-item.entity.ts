@@ -3,7 +3,7 @@ import { SupplierOrders } from './supplier-order.entity';
 import { Product } from './product.entity';
 
 @Entity('supplier_order_items')
-@Index(['supplierOrderId', 'productId'], { unique: true }) // Prévenir les doublons
+@Index(['supplierOrderId', 'productId'], { unique: true }) // Prevents duplicate
 export class SupplierOrderItems {
   @PrimaryGeneratedColumn()
   id: number;

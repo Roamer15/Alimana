@@ -24,14 +24,14 @@ export class Sale {
   id: number;
 
   @ManyToOne(() => Store, (store) => store.sales, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'storeId' })
+  @JoinColumn({ name: 'store_id' })
   store: Store;
 
   @Index()
   @Column()
   storeId: number;
 
-  @ManyToOne(() => StoreUser, (user) => user.sales)
+  @ManyToOne(() => StoreUser)
   @JoinColumn({ name: 'createdById' })
   createdBy: StoreUser;
 
@@ -45,8 +45,8 @@ export class Sale {
   @JoinColumn({ name: 'cashSessionId' })
   cashRegisterSession: CashRegisterSession;
 
-  @Column()
-  cashRegisterSessionId: number;
+  @Column({ nullable: true })
+  cashRegisterSessionId: number | null;
 
   @OneToMany(() => SaleItem, (item) => item.sale, { cascade: true })
   saleItems: SaleItem[];

@@ -44,7 +44,7 @@ export class SupplierOrders {
   @Column({ name: 'supplier_id', nullable: true })
   supplierId: number;
 
-  @ManyToOne(() => StoreUser, (storeUser) => storeUser.SupplierOrders, {
+  @ManyToOne(() => StoreUser, {
     onDelete: 'SET NULL',
     nullable: true,
   })

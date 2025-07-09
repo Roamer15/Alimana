@@ -31,7 +31,7 @@ export class DamagedOrExpiredReport {
   @Column()
   storeId: number;
 
-  @ManyToOne(() => StoreUser, (user) => user.damagedOrExpiredReports, {
+  @ManyToOne(() => StoreUser, {
     onDelete: 'SET NULL',
     nullable: true,
   })
@@ -42,7 +42,7 @@ export class DamagedOrExpiredReport {
   @Column({ name: 'reported_by_id', nullable: true })
   reportedById: number;
 
-  @ManyToOne(() => StoreUser, (user) => user.approvedReports, {
+  @ManyToOne(() => StoreUser, {
     onDelete: 'SET NULL',
     nullable: true,
   })

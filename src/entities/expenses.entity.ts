@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   Index,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Store } from './store.entity';
 import { StoreUser } from './store-user.entity';
@@ -34,9 +35,9 @@ export class Expense {
   category: string;
 
   @Column({ type: 'date' })
-  date: string;
+  date: Date;
 
-  @ManyToOne(() => StoreUser, (user) => user.expenses, { onDelete: 'SET NULL', nullable: true })
+  @ManyToOne(() => StoreUser, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'created_by' })
   createdBy: StoreUser;
 
@@ -49,4 +50,7 @@ export class Expense {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

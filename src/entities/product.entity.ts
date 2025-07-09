@@ -72,7 +72,7 @@ export class Product {
   @Column({ name: 'category_id', nullable: true })
   categoryId: number;
 
-  @ManyToOne(() => StoreUser, (user) => user.products, { nullable: true })
+  @ManyToOne(() => StoreUser, { nullable: true })
   @JoinColumn({ name: 'store_user_id' })
   createdBy: StoreUser;
 
