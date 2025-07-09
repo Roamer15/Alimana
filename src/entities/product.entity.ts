@@ -68,12 +68,12 @@ export class Product {
   @JoinColumn({ name: 'category_id' })
   category: Category;
 
-  @Index() // <- index appliqué sur categoryId, pour optimiser les filtres
+  @Index() // <- index applied on categoryId, to optimize filters
   @Column({ name: 'category_id', nullable: true })
   categoryId: number;
 
   @ManyToOne(() => StoreUser, { nullable: true })
-  @JoinColumn({ name: 'store_user_id' })
+  @JoinColumn({ name: 'created_by_id' }) // aligné avec le nom de la colonne
   createdBy: StoreUser;
 
   @Column({ name: 'created_by_id', nullable: true })
