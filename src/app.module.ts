@@ -6,8 +6,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from './config/config.module'; // centralized module
 import { ConfigService } from './config/config.service'; //  service typé
 
-// import { MyLoggerModule } from './my-logger/my-logger.module';
-
 @Module({
   imports: [
     // Uses the centralized configuration module with Joi validation
@@ -28,7 +26,6 @@ import { ConfigService } from './config/config.service'; //  service typé
         logging: configService.typeormLogging,
       }),
     }),
-    // MyLoggerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
