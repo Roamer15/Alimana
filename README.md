@@ -49,6 +49,20 @@ npm run format
 npm run type-check
 ```
 
+### Code migration
+
+```bash
+# Générer une migration
+npm run migration:generate -- src/database/migrations/InitSchema
+
+# Exécuter les migrations
+npm run migration:run
+
+# Revenir en arrière si besoin
+npm run migration:revert
+
+```
+
 ### Testing
 
 ```bash
