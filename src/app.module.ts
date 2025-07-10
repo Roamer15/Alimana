@@ -2,15 +2,14 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
-import { ConfigModule } from './config/config.module'; // centralized module
-import { ConfigService } from './config/config.service'; //  service typé
+import { ConfigModule } from './config/config.module';
+import { ConfigService } from './config/config.service';
+import { MyLoggerModule } from './my-logger/my-logger.module';
 
 @Module({
   imports: [
-    // Uses the centralized configuration module with Joi validation
+    MyLoggerModule,
     ConfigModule,
-
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -22,7 +21,7 @@ import { ConfigService } from './config/config.service'; //  service typé
         password: configService.dbPassword,
         database: configService.dbName,
         autoLoadEntities: true,
-        synchronize: false, //  Always disabled in production
+        synchronize: false,
         logging: configService.typeormLogging,
       }),
     }),
