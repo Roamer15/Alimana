@@ -35,6 +35,7 @@ export class Sale {
   @JoinColumn({ name: 'createdById' })
   createdBy: StoreUser;
 
+  @Index()
   @Column()
   createdById: number;
 
@@ -45,6 +46,7 @@ export class Sale {
   @JoinColumn({ name: 'cash_register_session_id' }) // snake_case conseillé
   cashRegisterSession: CashRegisterSession;
 
+  @Index()
   @Column({ name: 'cash_register_session_id', nullable: true })
   cashRegisterSessionId: number | null;
 
@@ -54,7 +56,7 @@ export class Sale {
   @OneToMany(() => CustomerReturn, (ret) => ret.sale)
   returns: CustomerReturn[];
 
-  @OneToOne(() => Receipt, (receipt) => receipt.sale)
+  @OneToOne(() => Receipt, (receipt) => receipt.sale) // Suppression de @JoinColumn() ici
   receipt: Receipt;
 
   @OneToMany(() => Payment, (payment) => payment.sale)

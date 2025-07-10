@@ -20,6 +20,7 @@ export class DamagedOrExpiredItem {
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
+  @Index()
   @Column({ name: 'product_id' })
   productId: number;
 

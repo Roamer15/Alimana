@@ -14,11 +14,13 @@ export class Receipt {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToOne(() => Sale, (sale) => sale.receipt, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'saleId' })
+  @OneToOne(() => Sale, (sale) => sale.receipt, {
+    onDelete: 'SET NULL', // ou 'NO ACTION' selon besoin
+  })
+  @JoinColumn({ name: 'saleId' }) // colonne FK dans receipt
   sale: Sale;
 
-  @Column()
+  @Column({ nullable: true })
   saleId: number;
 
   @Column({ type: 'text', nullable: true })
@@ -31,5 +33,5 @@ export class Receipt {
   generatedAt: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updatedAt: Date;
 }
