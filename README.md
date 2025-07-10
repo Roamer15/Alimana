@@ -53,7 +53,7 @@ npm run type-check
 
 ```bash
 # Générer une migration
-npm run migration:generate -- name=InitSchema
+npm run migration:generate -- src/database/migrations/InitSchema
 
 # Exécuter les migrations
 npm run migration:run

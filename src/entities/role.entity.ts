@@ -15,7 +15,7 @@ import { StoreUser } from './store-user.entity';
 import { Invitation } from './invitation.entity';
 import { Permission } from './permission.entity';
 
-@Entity('Roles')
+@Entity('roles')
 export class Role {
   @PrimaryGeneratedColumn()
   id: number;

@@ -16,6 +16,7 @@ import { Role } from './role.entity';
 import { Invitation } from './invitation.entity';
 import { AuditLog } from './audit-logs.entity';
 import { CashRegisterSession } from './cash-register-session.entity';
+import { UserRefreshToken } from './user-refresh-token.entity';
 // Removed direct imports for Sale, Expense, InventoryMovement, etc.,
 // as their OneToMany relationships are being removed from StoreUser directly.
 // These entities will still exist and be managed by their own services/repositories.
@@ -91,6 +92,9 @@ export class StoreUser {
   // by a RoleService/RoleRepository that also tracks the creator.
   @OneToMany(() => Role, (role) => role.createdBy, { lazy: true })
   rolesCreated: Promise<Role[]>; // Use Promise with lazy loading
+
+  @OneToMany(() => UserRefreshToken, (token) => token.storeUser)
+  refreshTokens: UserRefreshToken[];
 
   // --- Relations supprimées : Accéder via les services ou dépôts dédiés ---
   // /** Products created by this user in the store */

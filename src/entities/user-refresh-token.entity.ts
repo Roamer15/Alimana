@@ -1,5 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from './User.entity';
+import { StoreUser } from './store-user.entity';
 
 @Entity('user_refresh_tokens')
 export class UserRefreshToken {
@@ -30,4 +31,11 @@ export class UserRefreshToken {
 
   @Column({ name: 'revoked', type: 'boolean', default: false })
   revoked: boolean;
+
+  @ManyToOne(() => StoreUser, { nullable: true }) // Relation optionnelle vers StoreUser
+  @JoinColumn({ name: 'store_user_id' }) // Assurez-vous que le nom de la colonne correspond
+  storeUser: StoreUser; // Ajout de la relation vers StoreUser
+
+  @Column({ nullable: true }) // Colonne pour l'ID de l'utilisateur de magasin
+  storeUserId: number;
 }

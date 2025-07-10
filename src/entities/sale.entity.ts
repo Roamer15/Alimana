@@ -42,10 +42,10 @@ export class Sale {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  @JoinColumn({ name: 'cashSessionId' })
+  @JoinColumn({ name: 'cash_register_session_id' }) // snake_case conseillé
   cashRegisterSession: CashRegisterSession;
 
-  @Column({ nullable: true })
+  @Column({ name: 'cash_register_session_id', nullable: true })
   cashRegisterSessionId: number | null;
 
   @OneToMany(() => SaleItem, (item) => item.sale, { cascade: true })

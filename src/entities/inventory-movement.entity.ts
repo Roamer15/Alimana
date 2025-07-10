@@ -72,11 +72,11 @@ export class InventoryMovement {
   createdAt: Date;
 
   @ManyToOne(() => StoreUser, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'created_by' })
+  @JoinColumn({ name: 'created_by_id' })
   createdBy: StoreUser | null;
 
-  @Column({ nullable: true })
-  createById: number | null;
+  @Column({ name: 'created_by_id', nullable: true })
+  createdById: number | null;
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;
