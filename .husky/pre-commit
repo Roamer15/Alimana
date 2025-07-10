@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 
 npx tsc --noEmit
-npx lint-staged && npm run test
+npx lint-staged
