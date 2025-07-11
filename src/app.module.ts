@@ -28,7 +28,7 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
         namingStrategy: new SnakeNamingStrategy(),
 
         // Pour les environnements de développement (TypeScript)
-        // entities: [__dirname + '/entities/**/*.entity{.ts,.js}',],
+        entities: [__dirname + '/entities/**/*.entity{.ts,.js}'],
 
         logging: configService.typeormLogging,
       }),
