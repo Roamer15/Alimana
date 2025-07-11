@@ -53,6 +53,7 @@ export class RegisterDto {
   })
   avatarUrl?: string;
 
+  @IsOptional()
   @IsEnum(AuthProvider, { message: "Le fournisseur d'authentification n'est pas valide." })
   @IsNotEmpty({ message: "Le fournisseur d'authentification est requis." })
   authProvider: AuthProvider;

@@ -6,6 +6,7 @@ import { AppConfigModule } from './config/config.module';
 import { AppConfigService } from './config/config.service';
 import { MyLoggerModule } from './my-logger/my-logger.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 @Module({
   imports: [
@@ -24,6 +25,11 @@ import { AuthModule } from './modules/auth/auth.module';
         database: configService.dbName,
         autoLoadEntities: true,
         synchronize: false,
+        namingStrategy: new SnakeNamingStrategy(),
+
+        // Pour les environnements de développement (TypeScript)
+        // entities: [__dirname + '/entities/**/*.entity{.ts,.js}',],
+
         logging: configService.typeormLogging,
       }),
     }),
