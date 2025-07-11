@@ -11,7 +11,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let responseBody: any = {
       code: 'INTERNAL_SERVER_ERROR',
-      error: 'Une erreur inattendue est survenue',
+      error: 'internal server error',
     };
 
     // Si c'est une HttpException (y compris celles personnalisées)
