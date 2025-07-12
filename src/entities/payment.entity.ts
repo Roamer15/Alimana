@@ -17,11 +17,11 @@ export class Payment {
   id: number;
 
   @ManyToOne(() => Sale, (sale) => sale.payments, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'saleId' })
+  @JoinColumn({ name: 'sale_id' })
   sale: Sale;
 
   @Index()
-  @Column()
+  @Column({ name: 'sale_id' })
   saleId: number;
 
   @ManyToOne(() => PaymentMethod, (paymentMethod) => paymentMethod.payments, {

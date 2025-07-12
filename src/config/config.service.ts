@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService as NestConfigService } from '@nestjs/config';
 
 @Injectable()
-export class ConfigService {
+export class AppConfigService {
   constructor(private readonly config: NestConfigService) {}
 
   get dbHost(): string | undefined {
@@ -35,7 +35,37 @@ export class ConfigService {
   }
 
   get jwtExpiresIn(): string | undefined {
-    return this.config.get<string>('JWT_EXPIRES_IN');
+    return this.config.get<string>('JWT_ACCESS_TOKEN_EXPIRATION');
+  }
+
+  get jwtAccessTokenExpiration(): string | undefined {
+    return this.config.get<string>('JWT_ACCESS_TOKEN_EXPIRATION');
+  }
+
+  get jwtRefrehTokenExpiration(): string | undefined {
+    return this.config.get<string>('JWT_REFRESH_TOKEN_EXPIRATION');
+  }
+
+  get jwtAccesTokenExpirationMs(): string | undefined {
+    return this.config.get<string>('JWT_ACCESS_TOKEN_EXPIRATION_MS');
+  }
+
+  get jwtRefrehTokenExpirationMs(): string | undefined {
+    return this.config.get<string>('JWT_REFRESH_TOKEN_EXPIRATION_MS');
+  }
+
+  // GOOGLE AUTHENTIFICATION
+
+  get googleClientID(): string | undefined {
+    return this.config.get<string>('GOOGLE_CLIENT_ID');
+  }
+
+  get googleSecretID(): string | undefined {
+    return this.config.get<string>('GOOGLE_CLIENT_SECRET');
+  }
+
+  get callBackUrl(): string | undefined {
+    return this.config.get<string>('GOOGLE_CALLBACK_URL');
   }
 
   // 📧 Mailing
