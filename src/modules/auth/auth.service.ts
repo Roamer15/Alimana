@@ -226,7 +226,7 @@ export class AuthService {
     }
 
     if (storeUser.status !== StoreUserStatus.ACTIVE) {
-      throwHttpError(ErrorCode.ACCESS_DENIED, {
+      throwHttpError(ErrorCode.FORBIDDEN, {
         reason: 'Votre accès à la boutique a été désactivé.',
         details: { storeUserId, status: storeUser.status },
       });
@@ -258,7 +258,7 @@ export class AuthService {
           { revoked: true },
         );
       }
-      throwHttpError(ErrorCode.INVALID_CREDENTIALS, {
+      throwHttpError(ErrorCode.REFRESH_TOKEN_INVALID, {
         reason: 'Jeton de rafraîchissement invalide ou expiré.',
       });
     }
@@ -268,9 +268,9 @@ export class AuthService {
     await this.userRefreshTokensRepository.save(storedToken);
 
     const user = storedToken.user;
-    const associatedStoreUser = storedToken.storeUser; // Récupérer l'utilisateur de magasin associé
+    const associatedStoreUser = storedToken.storeUser;
 
-    // Générer de nouveaux tokens
+    // Générer de nouveaux tokens avec information de la boutique choisi
     return this.generateTokens(user, associatedStoreUser, req);
   }
 

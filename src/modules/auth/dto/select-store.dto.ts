@@ -4,5 +4,5 @@ import { IsNumber, IsNotEmpty } from 'class-validator';
 export class SelectStoreDto {
   @IsNotEmpty()
   @IsNumber()
-  store_user_id: number;
+  storeUserId: number;
 }

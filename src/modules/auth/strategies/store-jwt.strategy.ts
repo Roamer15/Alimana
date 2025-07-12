@@ -77,7 +77,7 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
 
     // Vérifier le statut de l'utilisateur dans la boutique
     if (storeUser.status !== StoreUserStatus.ACTIVE) {
-      throwHttpError(ErrorCode.ACCESS_DENIED, {
+      throwHttpError(ErrorCode.FORBIDDEN, {
         reason: 'Votre accès à cette boutique est désactivé ou en attente.',
         details: { storeUserId: storeUser.id, status: storeUser.status },
       });

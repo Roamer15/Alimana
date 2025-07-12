@@ -21,8 +21,9 @@ import { StoreJwtGuard } from './guards/store-jwt.guard';
 import { User } from 'src/entities/User.entity';
 import { throwHttpError } from 'src/common/errors/http-exception.helper';
 import { ErrorCode } from 'src/common/errors/error-codes.enum';
+import { MyLoggerService } from '../../my-logger/my-logger.service';
 
-// --- Interfaces pour la typage des payloads JWT et des requêtes ---
+// --- Interfaces pour la typage des payloads JWT et des requêtes
 
 // Payload pour le JWT global de l'utilisateur
 interface UserJwtPayload {
@@ -65,6 +66,7 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private configService: AppConfigService,
+    private logger: MyLoggerService,
   ) {}
 
   // --- 1. Création de compte ---
@@ -89,6 +91,8 @@ export class AuthController {
       maxAge: Number(refreshTokenExpirationMs),
       sameSite: 'strict',
     });
+
+    this.logger.log(`new user Registration successful userEmail: ${user.email}`);
 
     return { message: 'Registration successful' };
   }
@@ -124,8 +128,10 @@ export class AuthController {
       sameSite: 'strict',
     });
 
-    // Rediriger vers une page de succès du frontend ou retourner un message de succès
-    res.redirect('/dashboard'); // Ou return { message: 'Google login successful' };
+    this.logger.log(`new user Registrat or login successfuly from google userEmail: ${user.email}`);
+
+    // res.redirect('/dashboard');
+    return { message: 'Google login successful' };
   }
 
   // --- 2. Authentification ---
@@ -152,6 +158,8 @@ export class AuthController {
       sameSite: 'strict',
     });
 
+    this.logger.log(` user  login successfuly from google userEmail: ${user.email}`);
+
     return { message: 'Login successful' };
   }
 
@@ -167,9 +175,8 @@ export class AuthController {
     const userId = req.user.userId; // Accès sécurisé à l'ID utilisateur depuis le payload JWT
     const { accessToken, refreshToken } = await this.authService.selectStore(
       userId,
-      selectStoreDto.store_user_id,
+      selectStoreDto.storeUserId,
     );
-
     const accessTokenExpirationMs = this.configService.jwtAccesTokenExpirationMs;
     const refreshTokenExpirationMs = this.configService.jwtRefrehTokenExpirationMs;
 
@@ -189,6 +196,9 @@ export class AuthController {
       sameSite: 'strict',
     });
 
+    this.logger.log(
+      `user : ${userId} successfully connect to the store ${selectStoreDto.storeUserId}`,
+    );
     return { message: 'Store selected successfully' };
   }
 
@@ -223,6 +233,8 @@ export class AuthController {
       sameSite: 'strict',
     });
 
+    this.logger.log(`Tokens refreshed successfully`);
+
     return { message: 'Tokens refreshed successfully' };
   }
 
@@ -244,9 +256,8 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
     });
-    // Si 'store_access_token' est un cookie séparé, assurez-vous de le clear aussi
+    // dans la messure ou j'utiliser deux token!!!!
     res.clearCookie('store_access_token', {
-      // Supposant que vous avez un cookie spécifique pour le contexte de la boutique
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -254,7 +265,6 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
-  // Exemple d'une route protégée utilisant le jeton d'accès global
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: JwtAuthRequest) {
@@ -262,11 +272,10 @@ export class AuthController {
     return req.user; // Contient { sub (userId), email, canCreateStore }
   }
 
-  // Exemple d'une route protégée utilisant le jeton d'accès spécifique à la boutique
+  // route protégée utilisant le jeton d'accès spécifique à la boutique
   @Get('store-dashboard')
   @UseGuards(StoreJwtGuard)
   getStoreDashboard(@Req() req: StoreJwtAuthRequest) {
-    // req.user est maintenant StoreUserJwtPayload
     return req.user; // Contient { userId, storeUserId, storeId, roleId, roleName, permissions }
   }
 }

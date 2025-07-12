@@ -13,7 +13,7 @@ async function bootstrap() {
   logger.log('Starting Alimana backend application...');
 
   // Register the global exception filter
-  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalFilters(new AllExceptionsFilter(logger));
 
   app.use(cookieParser()); // Enable the cookie-parser middleware
 
@@ -28,6 +28,12 @@ async function bootstrap() {
       disableErrorMessages: false, // Set to true in production to hide detailed error messages
     }),
   );
+
+  // app.enableCors({
+  //   origin: true, // Ou spécifiez des origines spécifiques: ['http://localhost:3000', 'https://your-frontend.com']
+  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  //   credentials: true, // Permet l'envoi de cookies et d'en-têtes d'autorisation
+  // });
 
   await app.listen(process.env.PORT ?? 3000);
 

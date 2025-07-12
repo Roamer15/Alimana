@@ -40,6 +40,7 @@ import { SupplierOrderItems } from 'src/entities/supplier-order-item.entity';
 import { Supplier } from 'src/entities/supplier.entity';
 import { SupplierOrders } from 'src/entities/supplier-order.entity';
 import { StoreSetting } from 'src/entities/store-setting.entity';
+import { MyLoggerService } from 'src/my-logger/my-logger.service';
 
 @Module({
   imports: [
@@ -94,6 +95,7 @@ import { StoreSetting } from 'src/entities/store-setting.entity';
     JwtAuthGuard,
     StoreJwtStrategy,
     StoreJwtGuard,
+    MyLoggerService,
   ],
   controllers: [AuthController],
 })
