@@ -6,6 +6,12 @@ async function bootstrap() {
   const logger = new MyLoggerService();
   const app = await NestFactory.create(AppModule, { logger });
 
+  // ✅ Enable CORS for frontend origin
+  app.enableCors({
+    origin: 'http://localhost:3001', // your frontend dev server
+    credentials: true, // optional, if you use cookies
+  });
+
   app.enableShutdownHooks();
   logger.log('Starting Alimana backend application...');
   await app.listen(process.env.PORT ?? 3000);
