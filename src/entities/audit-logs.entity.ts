@@ -48,13 +48,15 @@ export class AuditLog {
   @Column()
   entity: string; // ex: 'Product', 'Sale', etc.
 
-  //TODO: verifier le type de entityID
   @Index()
   @Column()
-  entityId: number; // Utiliser string pour plus de flexibilité (uuid, number...)
+  entityId: number;
 
   @Column({ type: 'json', nullable: true })
   oldValue: any;
+
+  @Column({ type: 'text', nullable: true })
+  notes: string | null;
 
   @Column({ type: 'json', nullable: true })
   newValue: any;

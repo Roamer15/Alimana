@@ -13,6 +13,8 @@ async function bootstrap() {
   logger.log('Starting Alimana backend application...');
 
   // Register the global exception filter
+  // Applies the global exception filter to the entire application
+  // It must be instantiated here for the loggerService dependency injection to work.
   app.useGlobalFilters(new AllExceptionsFilter(logger));
 
   app.use(cookieParser()); // Enable the cookie-parser middleware

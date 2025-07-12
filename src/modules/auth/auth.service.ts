@@ -184,7 +184,7 @@ export class AuthService {
       tokenHash: refreshTokenHash,
       expiresAt: refreshExpiresIn,
       user,
-      ...(storeUser && { storeUser }), // ajout conditionnel propre
+      ...(storeUser && { storeUser }), // ajout conditionnel
     });
 
     await this.userRefreshTokensRepository.save(newRefreshToken);
@@ -219,7 +219,7 @@ export class AuthService {
     });
 
     if (!storeUser) {
-      throwHttpError(ErrorCode.INVALID_CREDENTIALS, {
+      throwHttpError(ErrorCode.STORE_NOT_FOUND, {
         reason: "Sélection de boutique invalide ou non associée à l'utilisateur.",
         details: { userId, storeUserId },
       });
