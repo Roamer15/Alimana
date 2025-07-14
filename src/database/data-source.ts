@@ -35,7 +35,7 @@ if (validated.error) {
 
 const env: EnvVars = validated.value; // Explicit typing, no more `any`
 
-// Normal use
+// Normal
 const isTsEnv = __filename.endsWith('.ts');
 
 export const AppDataSource = new DataSource({
@@ -45,7 +45,7 @@ export const AppDataSource = new DataSource({
   username: env.DB_USERNAME,
   password: env.DB_PASSWORD,
   database: env.DB_NAME,
-  entities: [isTsEnv ? 'src/entities/**/*.entity.ts' : 'dist/entities/**/*.entity.js'],
+  entities: ['src/entities/**/*.entity.ts'],
   migrations: [isTsEnv ? 'src/database/migrations/**/*.ts' : 'dist/database/migrations/**/*.js'],
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: false,
