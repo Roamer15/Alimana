@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm'; //décorateur de TypeORM pour injecter un dépôt (Repository) d'entité spécifique.
+import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm'; //fournit des méthodes pour interagir avec la base de données (enregistrer, trouver, supprimer des entités).
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
@@ -15,6 +15,11 @@ import { ErrorCode } from '../../common/errors/error-codes.enum';
 import { throwHttpError } from '../../common/errors/http-exception.helper';
 import { Profile } from 'passport-google-oauth20';
 import { Request } from 'express';
+import { MyLoggerService } from '../../my-logger/my-logger.service';
+
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { RequestContextService } from 'src/common/context/request-context.service';
+import { AuditActionType } from 'src/entities/audit-logs.entity';
 
 @Injectable()
 export class AuthService {
@@ -27,6 +32,9 @@ export class AuthService {
     private storeUsersRepository: Repository<StoreUser>,
     private jwtService: JwtService,
     private configService: AppConfigService,
+    private readonly auditLogsService: AuditLogService,
+    private readonly requestContextService: RequestContextService,
+    private logger: MyLoggerService,
   ) {}
 
   //  Création de compte
@@ -55,18 +63,10 @@ export class AuthService {
   async validateUser(email: string, pass: string): Promise<User | null> {
     const user = await this.usersRepository.findOne({ where: { email } });
 
-    // Si l'utilisateur n'est pas trouvé, lever une erreur USER_NOT_FOUND
-    // C'est préférable à "EMAIL_ALREADY_USED" qui est pour l'enregistrement.
-    // Pour des raisons de sécurité (prévention de l'énumération d'utilisateurs),
-    // certains préfèrent une erreur générique "Identifiants invalides" pour les deux cas (utilisateur non trouvé ou mot de passe incorrect).
     if (!user) {
       throwHttpError(ErrorCode.USER_NOT_FOUND, { email: email });
     }
 
-    // Si l'utilisateur est trouvé mais que le mot de passe est nul/indéfini dans la DB,
-    // cela indique un problème de données ou un utilisateur sans mot de passe,
-    // ce qui devrait empêcher la connexion. On traite cela comme des identifiants invalides.
-    // Normalement, après l'enregistrement, user.password ne devrait pas être null.
     if (!user.password) {
       throwHttpError(ErrorCode.INVALID_CREDENTIALS, { reason: 'User has no password set' });
     }
@@ -206,8 +206,31 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
     if (!user) {
+      const { ipAddress, userAgent } = this.requestContextService.getContext();
+      await this.auditLogsService.createAuditLog({
+        storeId: null,
+        storeUserId: null,
+        actionType: AuditActionType.LOGIN,
+        entity: 'User',
+        entityId: 'null',
+        notes: `Tentative de connexion échouée pour l'email: ${loginDto.email}`,
+        ipAddress,
+        userAgent,
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
+    const { ipAddress, userAgent } = this.requestContextService.getContext();
+    await this.auditLogsService.createAuditLog({
+      storeId: null,
+      storeUserId: user.id,
+      actionType: AuditActionType.LOGIN,
+      entity: 'User',
+      entityId: String(user.id),
+      notes: `Connexion réussie de l'utilisateur: ${user.email}`,
+      ipAddress,
+      userAgent,
+    });
+
     return this.generateTokens(user);
   }
 
@@ -285,5 +308,20 @@ export class AuthService {
       token.revoked = true;
       await this.userRefreshTokensRepository.save(token);
     }
+
+    const { storeId, storeUserId, ipAddress, userAgent } = this.requestContextService.getContext();
+    await this.auditLogsService.createAuditLog({
+      storeId,
+      storeUserId,
+      actionType: AuditActionType.LOGOUT,
+      entity: 'UserRefreshToken',
+      entityId: String(token?.id),
+      notes: `Déconnexion de l'utlisateur ${token?.user.fullName} de la session ${token?.id}`,
+      ipAddress,
+      userAgent,
+    });
+    this.logger.log(
+      `Déconnexion de l'utlisateur ${token?.user.fullName} de la session ${token?.id}`,
+    );
   }
 }

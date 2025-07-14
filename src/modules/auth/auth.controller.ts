@@ -1,4 +1,3 @@
-// src/auth/auth.controller.ts
 import {
   Controller,
   Post,
@@ -22,8 +21,6 @@ import { User } from 'src/entities/User.entity';
 import { throwHttpError } from 'src/common/errors/http-exception.helper';
 import { ErrorCode } from 'src/common/errors/error-codes.enum';
 import { MyLoggerService } from '../../my-logger/my-logger.service';
-
-// --- Interfaces pour la typage des payloads JWT et des requêtes
 
 // Payload pour le JWT global de l'utilisateur
 interface UserJwtPayload {
@@ -262,6 +259,7 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
     });
+
     return { message: 'Logged out successfully' };
   }
 

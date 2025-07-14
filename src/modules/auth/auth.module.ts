@@ -41,10 +41,14 @@ import { Supplier } from 'src/entities/supplier.entity';
 import { SupplierOrders } from 'src/entities/supplier-order.entity';
 import { StoreSetting } from 'src/entities/store-setting.entity';
 import { MyLoggerService } from 'src/my-logger/my-logger.service';
+import { AuditLogModule } from '../audit-log/audit-log.module';
+import { RequestContextModule } from 'src/common/context/request-context.module';
 
 @Module({
   imports: [
     AppConfigModule,
+    AuditLogModule,
+    RequestContextModule,
     TypeOrmModule.forFeature([
       User,
       UserRefreshToken,
@@ -85,6 +89,7 @@ import { MyLoggerService } from 'src/my-logger/my-logger.service';
           expiresIn: config.jwtAccessTokenExpiration,
         },
       }),
+      global: true,
     }),
   ],
   providers: [

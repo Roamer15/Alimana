@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { StoreUser } from './store-user.entity';
 import { UserRefreshToken } from './user-refresh-token.entity';
+import { Store } from './store.entity';
 
 export enum AuthProvider {
   LOCAL = 'local',
@@ -57,7 +58,10 @@ export class User {
   @CreateDateColumn()
   createdAt: Date;
 
-  @OneToMany(() => StoreUser, (storeUser) => storeUser.user)
+  @OneToMany(() => Store, (store) => store.owner)
+  stores: Promise<Store[]>;
+
+  @OneToMany(() => StoreUser, (storeUser) => storeUser.user, { lazy: true })
   storeUsers: StoreUser[];
 
   @OneToMany(() => UserRefreshToken, (token) => token.user)

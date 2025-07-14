@@ -14,9 +14,43 @@ export enum AuditActionType {
   CREATE = 'CREATE',
   UPDATE = 'UPDATE',
   DELETE = 'DELETE',
+
+  // Actions d'authentification/utilisateur
   LOGIN = 'LOGIN',
   LOGOUT = 'LOGOUT',
-  //Add other actions as needed
+  PASSWORD_CHANGE = 'PASSWORD_CHANGE',
+  ROLE_ASSIGN = 'ROLE_ASSIGN',
+  INVITATION_SENT = 'INVITATION_SENT',
+
+  // Actions spécifiques aux sessions de caisse
+  CASH_REGISTER_SESSION_OPENED = 'CASH_REGISTER_SESSION_OPENED',
+  CASH_REGISTER_SESSION_CLOSED = 'CASH_REGISTER_SESSION_CLOSED',
+
+  // Actions spécifiques aux ventes
+  SALE_CREATED = 'SALE_CREATED',
+  SALE_UPDATED = 'SALE_UPDATED', // Pour les mises à jour générales de la vente (hors statut)
+  SALE_COMPLETED = 'SALE_COMPLETED',
+  SALE_CANCELLED = 'SALE_CANCELLED',
+
+  // Actions spécifiques aux mouvements de stock
+  INVENTORY_MOVEMENT_CREATED = 'INVENTORY_MOVEMENT_CREATED',
+  INVENTORY_MOVEMENT_UPDATED = 'INVENTORY_MOVEMENT_UPDATED', // Pour les mises à jour générales du mouvement
+  INVENTORY_MOVEMENT_APPROVED = 'INVENTORY_MOVEMENT_APPROVED', // Si un mouvement a un statut d'approbation
+  INVENTORY_MOVEMENT_REJECTED = 'INVENTORY_MOVEMENT_REJECTED',
+
+  // Actions spécifiques aux retours clients
+  CUSTOMER_RETURN_CREATED = 'CUSTOMER_RETURN_CREATED',
+  CUSTOMER_RETURN_PROCESSED = 'CUSTOMER_RETURN_PROCESSED',
+  CUSTOMER_RETURN_CANCELLED = 'CUSTOMER_RETURN_CANCELLED',
+
+  // Actions spécifiques aux rapports de produits endommagés/expirés
+  DAMAGE_REPORT_CREATED = 'DAMAGE_REPORT_CREATED',
+  DAMAGE_REPORT_APPROVED = 'DAMAGE_REPORT_APPROVED',
+  DAMAGE_REPORT_REJECTED = 'DAMAGE_REPORT_REJECTED',
+
+  // Autres actions métier
+  REPORT_GENERATED = 'REPORT_GENERATED',
+  PRODUCT_STOCK_ADJUSTED = 'PRODUCT_STOCK_ADJUSTED', // Peut être utilisé en plus de l'UPDATE générique du produit si besoin
 }
 
 @Entity('audit_logs')
@@ -38,8 +72,8 @@ export class AuditLog {
   storeUser: StoreUser;
 
   @Index()
-  @Column({ name: 'store_user_id' })
-  storeUserId: number;
+  @Column({ name: 'store_user_id', nullable: true })
+  storeUserId: number | null;
 
   @Column({ type: 'enum', enum: AuditActionType })
   actionType: AuditActionType;
@@ -49,20 +83,20 @@ export class AuditLog {
   entity: string; // ex: 'Product', 'Sale', etc.
 
   @Index()
-  @Column()
-  entityId: number;
+  @Column({ type: 'varchar', length: 255 })
+  entityId: string;
 
-  @Column({ type: 'json', nullable: true })
-  oldValue: any;
+  @Column({ type: 'jsonb', nullable: true })
+  oldValue: object | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  newValue: object | null;
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
-  @Column({ type: 'json', nullable: true })
-  newValue: any;
-
   @CreateDateColumn({ type: 'timestamp' })
-  timestamp: Date;
+  createdAt: Date;
 
   @Column({ type: 'varchar', length: 45, nullable: true })
   ipAddress: string | null;
