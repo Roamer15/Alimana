@@ -7,6 +7,7 @@ import { AppConfigService } from './config/config.service';
 import { MyLoggerModule } from './my-logger/my-logger.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
         logging: configService.typeormLogging,
       }),
     }),
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
