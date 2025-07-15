@@ -21,7 +21,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prepare": "husky",
     "type-check": "tsc --noEmit",
-    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js  --dataSource src/database/data-source.ts",
     "migration:create": "npm run typeorm migration:create -- -d src/database/data-source.ts src/database/migrations",
     "migration:generate": "npm run typeorm migration:generate -- -d src/database/data-source.ts",
     "migration:run": "npm run typeorm migration:run -- -d src/database/data-source.ts",
