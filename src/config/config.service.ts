@@ -68,6 +68,10 @@ export class AppConfigService {
     return this.config.get<string>('GOOGLE_CALLBACK_URL');
   }
 
+  get frontendUrl(): string | undefined {
+    return this.config.get<string>('FRONTEND_URL');
+  }
+
   // 📧 Mailing
   get mailHost(): string | undefined {
     return this.config.get<string>('MAIL_HOST');
