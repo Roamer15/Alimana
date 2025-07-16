@@ -8,6 +8,7 @@ import { MyLoggerModule } from './my-logger/my-logger.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { RolesModule } from './modules/roles/roles.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { RolesModule } from './modules/roles/roles.module';
       }),
     }),
     RolesModule,
+    PermissionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

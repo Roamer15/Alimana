@@ -5,6 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Permission } from 'src/entities/permission.entity';
 import { Repository, In } from 'typeorm';
 import { MyLoggerService } from 'src/my-logger/my-logger.service';
+import { throwHttpError } from 'src/common/errors/http-exception.helper';
+import { ErrorCode } from 'src/common/errors/error-codes.enum';
 
 @Injectable()
 export class RolesService {
@@ -18,105 +20,177 @@ export class RolesService {
 
   /**
    * Create a new role and assign permissions to it.
-   * @param dto Data Transfer Object containing role details and permission IDs.
-   * @returns The created Role entity.
    */
   async createRole(dto: CreateRoleDto): Promise<Role> {
-    this.logger.log(`Creating role: ${dto.name} with permissions: ${dto.permissionIds.join(', ')}`);
-    const { permissionIds, ...roleData } = dto;
+    return await this.roleRepository.manager.transaction(async (manager) => {
+      try {
+        this.logger.log(
+          `Creating role: ${dto.name} with permissions: ${dto.permissionIds.join(', ')}`,
+        );
+        const { permissionIds, ...roleData } = dto;
 
-    // Fetch permissions from the database
-    const permissions = await this.permissionRepository.find({ where: { id: In(permissionIds) } });
-    this.logger.log(`Fetched permissions: ${permissions.map((p) => p.id).join(', ')}`);
+        // Fetch permissions within transaction
+        const permissions = await manager.getRepository(Permission).find({
+          where: { id: In(permissionIds) },
+        });
 
-    // Create the role entity with the fetched permissions
-    const role = this.roleRepository.create({
-      ...roleData,
-      permissions,
+        if (permissions.length !== permissionIds.length) {
+          this.logger.warn('Some permissions not found for IDs: ' + permissionIds.join(', '));
+          throwHttpError(ErrorCode.PERMISSION_NOT_FOUND, { permissionIds });
+        }
+
+        // Create role and assign permissions within the same transaction
+        const role = manager.getRepository(Role).create({
+          ...roleData,
+          permissions,
+        });
+
+        const savedRole = await manager.getRepository(Role).save(role);
+        this.logger.log(`Role created with ID: ${savedRole.id} and name: ${savedRole.name}`);
+
+        return savedRole;
+      } catch (error) {
+        if (error instanceof Error) {
+          this.logger.error(
+            'Error creating role (transaction rolled back)',
+            error.stack || error.message,
+          );
+          throwHttpError(ErrorCode.ROLE_CREATION_FAILED, { error: error.message });
+        }
+        throwHttpError(ErrorCode.ROLE_CREATION_FAILED, { error: String(error) });
+      }
     });
-
-    // Save the new role to the database
-    const savedRole = await this.roleRepository.save(role);
-    this.logger.log(`Role created with ID: ${savedRole.id} and name: ${savedRole.name}`);
-
-    return savedRole;
   }
 
   /**
    * Retrieve all roles from the database, including their permissions.
-   * @returns Array of Role entities.
    */
   async getAllRoles(): Promise<Role[]> {
-    this.logger.log('Fetching all roles');
-    return this.roleRepository.find({ relations: ['permissions'] });
+    try {
+      this.logger.log('Fetching all roles');
+      return await this.roleRepository.find({ relations: ['permissions'] });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error('Error fetching all roles', error.stack || error.message);
+        throwHttpError(ErrorCode.ROLE_FETCH_FAILED, { error: error.message });
+      }
+      // If error is not an instance of Error, throw a generic error
+      throwHttpError(ErrorCode.ROLE_FETCH_FAILED, { error: String(error) });
+    }
   }
 
   /**
    * Retrieve a single role by its ID, including its permissions.
-   * @param id Role ID.
-   * @returns The Role entity or null if not found.
    */
   async getRoleById(id: number): Promise<Role | null> {
-    this.logger.log(`Fetching role by ID: ${id}`);
-    return this.roleRepository.findOne({
-      where: { id },
-      relations: ['permissions'],
-    });
+    try {
+      this.logger.log(`Fetching role by ID: ${id}`);
+      const role = await this.roleRepository.findOne({
+        where: { id },
+        relations: ['permissions'],
+      });
+      if (!role) {
+        this.logger.warn(`Role with ID ${id} not found`);
+        throwHttpError(ErrorCode.ROLE_NOT_FOUND, { id });
+      }
+      return role;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(`Error fetching role by ID: ${id}`, error.stack || error.message);
+        throwHttpError(ErrorCode.ROLE_FETCH_FAILED, { id, error: error.message });
+      }
+      // If error is not an instance of Error, throw a generic error
+      throwHttpError(ErrorCode.ROLE_FETCH_FAILED, { error: String(error) });
+    }
   }
 
   /**
    * Update the basic properties of a role (not its permissions).
-   * @param id Role ID.
-   * @param updateData Partial role data to update.
-   * @returns The updated Role entity or null if not found.
    */
   async updateRole(id: number, updateData: Partial<Role>): Promise<Role | null> {
-    this.logger.log(`Updating role ID: ${id} with data: ${JSON.stringify(updateData)}`);
-    await this.roleRepository.update(id, updateData);
-    return this.getRoleById(id);
+    try {
+      this.logger.log(`Updating role ID: ${id} with data: ${JSON.stringify(updateData)}`);
+      const result = await this.roleRepository.update(id, updateData);
+      if (result.affected === 0) {
+        this.logger.warn(`Role with ID ${id} not found for update`);
+        throwHttpError(ErrorCode.ROLE_NOT_FOUND, { id });
+      }
+      return this.getRoleById(id);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(`Error updating role ID: ${id}`, error.stack || error.message);
+        throwHttpError(ErrorCode.ROLE_UPDATE_FAILED, { id, error: error.message });
+      }
+      // If error is not an instance of Error, throw a generic error
+      throwHttpError(ErrorCode.ROLE_UPDATE_FAILED, { id, error: String(error) });
+    }
   }
 
   /**
    * Update the permissions assigned to a role.
-   * @param roleId Role ID.
-   * @param permissionIds Array of permission IDs to assign.
-   * @returns The updated Role entity or null if not found.
    */
-  async updateRolePermissions(roleId: number, permissionIds: number[]): Promise<Role | null> {
-    this.logger.log(`Updating permissions for role ID: ${roleId} to [${permissionIds.join(', ')}]`);
+  async updateRolePermissions(roleId: number, permissionIds: number[]): Promise<Role> {
+    return await this.roleRepository.manager.transaction(async (manager) => {
+      try {
+        this.logger.log(
+          `Updating permissions for role ID: ${roleId} to [${permissionIds.join(', ')}]`,
+        );
 
-    // 1. Find the role with its current permissions
-    const role = await this.roleRepository.findOne({
-      where: { id: roleId },
-      relations: ['permissions'],
+        const role = await manager.getRepository(Role).findOne({
+          where: { id: roleId },
+          relations: ['permissions'],
+        });
+
+        if (!role) {
+          this.logger.warn(`Role with ID ${roleId} not found`);
+          throwHttpError(ErrorCode.ROLE_NOT_FOUND, { roleId });
+        }
+
+        const permissions = await manager.getRepository(Permission).find({
+          where: { id: In(permissionIds) },
+        });
+
+        if (permissions.length !== permissionIds.length) {
+          this.logger.warn('Some permissions not found for IDs: ' + permissionIds.join(', '));
+          throwHttpError(ErrorCode.PERMISSION_NOT_FOUND, { permissionIds });
+        }
+
+        role.permissions = permissions;
+
+        const updatedRole = await manager.getRepository(Role).save(role);
+        this.logger.log(`Updated permissions for role ID: ${updatedRole.id}`);
+
+        return updatedRole;
+      } catch (error) {
+        if (error instanceof Error) {
+          this.logger.error(
+            `Error updating permissions for role ID: ${roleId} (transaction rolled back)`,
+            error.stack || error.message,
+          );
+          throwHttpError(ErrorCode.ROLE_UPDATE_FAILED, { roleId, error: error.message });
+        }
+        throwHttpError(ErrorCode.ROLE_UPDATE_FAILED, { roleId, error: String(error) });
+      }
     });
-    if (!role) {
-      this.logger.warn(`Role with ID ${roleId} not found`);
-      return null;
-    }
-
-    // 2. Fetch the new permissions
-    const permissions = await this.permissionRepository.find({
-      where: { id: In(permissionIds) },
-    });
-    this.logger.log(`Fetched new permissions: ${permissions.map((p) => p.id).join(', ')}`);
-
-    // 3. Assign the new permissions to the role
-    role.permissions = permissions;
-
-    // 4. Save and return the updated role
-    const updatedRole = await this.roleRepository.save(role);
-    this.logger.log(`Updated permissions for role ID: ${updatedRole.id}`);
-    return updatedRole;
   }
 
   /**
    * Delete a role by its ID.
-   * @param id Role ID.
    */
   async deleteRole(id: number): Promise<void> {
-    this.logger.log(`Deleting role with ID: ${id}`);
-    await this.roleRepository.delete(id);
-    this.logger.log(`Role with ID: ${id} deleted`);
+    try {
+      this.logger.log(`Deleting role with ID: ${id}`);
+      const result = await this.roleRepository.delete(id);
+      if (result.affected === 0) {
+        this.logger.warn(`Role with ID ${id} not found for deletion`);
+        throwHttpError(ErrorCode.ROLE_NOT_FOUND, { id });
+      }
+      this.logger.log(`Role with ID: ${id} deleted`);
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error deleting role with ID: ${id}`, error.stack || error.message);
+        throwHttpError(ErrorCode.ROLE_DELETE_FAILED, { id, error: error.message });
+      }
+    }
   }
 }

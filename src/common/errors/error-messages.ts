@@ -77,4 +77,30 @@ export const ErrorMessages: Record<ErrorCode, { message: string; status: HttpSta
     message: 'Fournisseur introuvable.',
     status: HttpStatus.NOT_FOUND,
   },
+
+  //Error messsages related to role management
+  [ErrorCode.PERMISSION_NOT_FOUND]: {
+    message: 'One or more permissions not found.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  [ErrorCode.ROLE_NOT_FOUND]: {
+    message: 'Role not found.',
+    status: HttpStatus.NOT_FOUND,
+  },
+  [ErrorCode.ROLE_CREATION_FAILED]: {
+    message: 'Failed to create role.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.ROLE_UPDATE_FAILED]: {
+    message: 'Failed to update role.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.ROLE_DELETE_FAILED]: {
+    message: 'Failed to delete role.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.ROLE_FETCH_FAILED]: {
+    message: 'Failed to fetch role.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
 };
