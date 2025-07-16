@@ -1,4 +1,3 @@
-// src/auth/auth.controller.ts
 import {
   Controller,
   Post,
@@ -22,6 +21,7 @@ import { User } from 'src/entities/User.entity';
 import { throwHttpError } from 'src/common/errors/http-exception.helper';
 import { ErrorCode } from 'src/common/errors/error-codes.enum';
 import { MyLoggerService } from '../../my-logger/my-logger.service';
+import { RequestContextService } from 'src/common/context/request-context/request-context.service';
 
 // --- Interfaces pour la typage des payloads JWT et des requêtes
 
@@ -67,6 +67,7 @@ export class AuthController {
     private authService: AuthService,
     private configService: AppConfigService,
     private logger: MyLoggerService,
+    private readonly requestContextService: RequestContextService,
   ) {}
 
   // --- 1. Création de compte ---
@@ -161,6 +162,19 @@ export class AuthController {
     this.logger.log(` user  login successfuly from google userEmail: ${user.email}`);
 
     return { message: 'Login successful' };
+  }
+
+  /**
+   * Récupère la liste de toutes les boutiques où l'utilisateur est un StoreUser actif.
+   * Cette route est accessible après une authentification globale (JwtAuthGuard).
+   */
+  @Get('my-stores')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async getMyStores(@Req() req: JwtAuthRequest) {
+    const userId = req.user.userId;
+    const stores = await this.authService.findUserStores(userId);
+    return { stores };
   }
 
   // --- 4. Sélection de boutique ---
@@ -268,6 +282,7 @@ export class AuthController {
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: JwtAuthRequest) {
+    // const { userId } = this.requestContextService.getContext();
     // req.user est maintenant UserJwtPayload
     return req.user; // Contient { sub (userId), email, canCreateStore }
   }
