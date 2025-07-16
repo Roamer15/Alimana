@@ -44,7 +44,10 @@ export class AuthService {
       throwHttpError(ErrorCode.EMAIL_ALREADY_USED, { email: email });
     }
 
-    const hashedPassword = await bcrypt.hash(password!, 10);
+    if (!password) {
+      throwHttpError(ErrorCode.VALIDATION_FAILED, { reason: 'Password is required' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = this.usersRepository.create({
       fullName,
