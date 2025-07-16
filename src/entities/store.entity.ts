@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
   Index,
+  ManyToOne,
 } from 'typeorm';
 
 import { StoreUser } from './store-user.entity';
@@ -15,6 +16,7 @@ import { PaymentMethod } from './payment-method.entity';
 import { CashRegister } from './cash-register.entity';
 import { Category } from './category.entity';
 import { Invitation } from './invitation.entity';
+import { User } from './User.entity';
 
 // Importations des entités pour les relations retirées ne sont plus nécessaires ici
 // import { Sale } from './sale.entity';
@@ -45,6 +47,18 @@ export class Store {
 
   @Column({ length: 50, nullable: true })
   phone: string;
+
+  @Column({ length: 255, nullable: true })
+  email?: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  logoUrl?: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  websiteUrl?: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  profileImageUrl?: string;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -81,6 +95,13 @@ export class Store {
   // Invitations sent by this store
   @OneToMany(() => Invitation, (invitation) => invitation.store, { lazy: true })
   invitations: Promise<Invitation[]>;
+
+  // ... dans l'entité Store
+  @ManyToOne(() => User, (user) => user.stores, { eager: false, nullable: false })
+  owner: User;
+
+  @Column()
+  ownerId: number; // Clé étrangère explicite (facultative mais recommandée pour les requêtes rapides)
 
   // --- Relations retirées (Accéder via les services ou dépôts dédiés) ---
   // sales, expenses, cashRegisterSessions, auditLogs, inventoryMovements,

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -93,8 +92,7 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
       storeId: payload.storeId,
       roleId: storeUser.role.id, // S'assurer que les données du rôle sont à jour
       roleName: storeUser.role.name, // S'assurer que les données du rôle sont à jour
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      permissions: storeUser.role.permissions.map((permission: Permission) => permission.name), // S'assurer que les données du rôle sont à jour
+      permissions: storeUser.role.permissions.map((permission: Permission) => permission.key), // S'assurer que les données du rôle sont à jour
     };
   }
 }
