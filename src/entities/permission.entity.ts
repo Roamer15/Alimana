@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { Role } from './role.entity';
 
@@ -19,6 +20,10 @@ export class Permission {
   @Column()
   label: string; // ex: 'Créer une vente'
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Index()
+  category: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -27,5 +32,4 @@ export class Permission {
 
   @ManyToMany(() => Role, (role) => role.permissions)
   roles: Role[];
-  name: any;
 }

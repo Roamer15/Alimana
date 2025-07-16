@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,11 +10,32 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { RolesModule } from './modules/roles/roles.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 
+// Importez les modules du contexte
+import { ClsModule } from 'nestjs-cls';
+import { RequestContextModule } from './common/context/request-context/request-context.module';
+import { PayloadContextMiddleware } from './common/middleware/payload-context.middleware';
+import { StoreModule } from './modules/store/store.module';
+// Importez votre middleware de payload
+
 @Module({
   imports: [
     MyLoggerModule,
     AuthModule,
     AppConfigModule,
+    StoreModule,
+    // Configuration de ClsModule au niveau racine
+    ClsModule.forRoot({
+      global: true, // Rend ClsModule globalement disponible
+      middleware: {
+        mount: true, // Monte le middleware CLS pour encapsuler chaque requête
+        // Options supplémentaires, par exemple pour générer un ID de requête unique
+        generateId: true,
+        idGenerator: (req: Request) =>
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+          req.headers['x-request-id'] || 'unique-id-' + Math.random().toString(36).substring(2, 10),
+      },
+    }),
+    RequestContextModule,
     TypeOrmModule.forRootAsync({
       imports: [AppConfigModule],
       inject: [AppConfigService],
@@ -41,4 +62,8 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(PayloadContextMiddleware).forRoutes('*'); // Applique le middleware de payload à toutes les routes
+  }
+}
