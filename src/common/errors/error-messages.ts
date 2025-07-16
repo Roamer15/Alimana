@@ -58,6 +58,10 @@ export const ErrorMessages: Record<ErrorCode, { message: string; status: HttpSta
     message: 'Boutique introuvable.',
     status: HttpStatus.NOT_FOUND,
   },
+  [ErrorCode.UNAUTHORIZED_TO_CREATE_STORE]: {
+    message: 'vous navez pas les permissions pour creer une boutique.',
+    status: HttpStatus.UNAUTHORIZED,
+  },
 
   // Erreurs spécifiques au domaine
   [ErrorCode.PRODUCT_NOT_FOUND]: {

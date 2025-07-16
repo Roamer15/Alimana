@@ -15,6 +15,8 @@ import { ErrorCode } from '../../common/errors/error-codes.enum';
 import { throwHttpError } from '../../common/errors/http-exception.helper';
 import { Profile } from 'passport-google-oauth20';
 import { Request } from 'express';
+import { RequestContextService } from 'src/common/context/request-context/request-context.service';
+import { MyLoggerService } from 'src/my-logger/my-logger.service';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +29,11 @@ export class AuthService {
     private storeUsersRepository: Repository<StoreUser>,
     private jwtService: JwtService,
     private configService: AppConfigService,
-  ) {}
+    private readonly requestContextService: RequestContextService,
+    private readonly logger: MyLoggerService,
+  ) {
+    console.log('✅ AuthService loaded');
+  }
 
   //  Création de compte
   async registerLocal(registerDto: RegisterDto): Promise<User> {
@@ -154,14 +160,35 @@ export class AuthService {
   //  Authentification & Génération de Tokens
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async generateTokens(user: User, storeUser?: StoreUser, req?: Request) {
+    // Vérification
+    if (storeUser) {
+      if (!storeUser.store || !storeUser.store.id) {
+        // Si elle se déclenche
+        // c'est que les relations ne sont pas chargées en amont.
+        throw new Error(
+          'Store object or Store ID is missing on StoreUser in generateTokens. Relation "store" not loaded.',
+        );
+      }
+      if (!storeUser.role || !storeUser.role.id) {
+        throw new Error(
+          'Role object or Role ID is missing on StoreUser in generateTokens. Relation "role" not loaded.',
+        );
+      }
+      if (!storeUser.role.permissions) {
+        throw new Error(
+          'Permissions array is missing on StoreUser.role in generateTokens. Relation "role.permissions" not loaded.',
+        );
+      }
+    }
+
     const payload = {
       userId: user.id,
       email: user.email,
       canCreateStore: user.canCreateStore,
       ...(storeUser && {
         storeUserId: storeUser.id,
-        storeId: storeUser.store.id,
-        roleId: storeUser.role.id,
+        storeId: storeUser.storeId,
+        roleId: storeUser.roleId,
         roleName: storeUser.role.name,
         permissions: storeUser.role.permissions,
       }),
@@ -211,6 +238,73 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
+  /**
+   * Récupère toutes les boutiques où l'utilisateur est un StoreUser actif.
+   * @param userId L'ID de l'utilisateur global.
+   * @returns Un tableau d'objets représentant les boutiques et le rôle de l'utilisateur.
+   */
+  async findUserStores(userId: number): Promise<
+    {
+      id: number;
+      name: string;
+      storeUserId: number;
+      roleName: string;
+      profileImageUrl: string;
+      logoUrl: string;
+    }[]
+  > {
+    // const { ipAddress, userAgent } = this.requestContextService.getContext();
+
+    // Récupérer toutes les entrées StoreUser pour cet utilisateur
+    const storeUsers = await this.storeUsersRepository.find({
+      where: {
+        user: { id: userId },
+        status: StoreUserStatus.ACTIVE, // Ne récupérer que les associations actives
+      },
+      relations: ['store', 'role'], // Charger les détails de la boutique et du rôle
+    });
+
+    if (!storeUsers || storeUsers.length === 0) {
+      this.logger.warn(
+        `User ID ${userId} is not associated with any active stores.`,
+        'AuthService',
+      );
+      // await this.auditLogsService.createAuditLog({
+      //   storeId: null,
+      //   storeUserId: userId,
+      //   actionType: AuditActionType.VIEW,
+      //   entity: 'StoreUser',
+      //   entityId: String(userId),
+      //   notes: `Utilisateur (ID: ${userId}) a tenté de lister ses boutiques, mais aucune n'a été trouvée.`,
+      //   ipAddress,
+      //   userAgent,
+      // });
+      return [];
+    }
+
+    const storesInfo = storeUsers.map((su) => ({
+      id: su.store.id,
+      name: su.store.name,
+      storeUserId: su.id, // C'est l'ID de la relation StoreUser, essentiel pour selectStore
+      roleName: su.role.name,
+      logoUrl: su.store.logoUrl ?? ``,
+      profileImageUrl: su.store.profileImageUrl ?? ``,
+    }));
+
+    this.logger.log(`User ID ${userId} fetched associated stores.`, 'AuthService');
+    // await this.auditLogsService.createAuditLog({
+    //   storeId: null,
+    //   storeUserId: userId,
+    //   actionType: AuditActionType.VIEW,
+    //   entity: 'Store',
+    //   entityId: String(userId),
+    //   notes: `Utilisateur (ID: ${userId}) a consulté la liste de ses boutiques associées.`,
+    //   ipAddress,
+    //   userAgent,
+    // });
+    return storesInfo;
+  }
+
   // --- 4. Sélection de boutique ---
   async selectStore(userId: number, storeUserId: number) {
     const storeUser = await this.storeUsersRepository.findOne({
@@ -247,7 +341,13 @@ export class AuthService {
     // Trouver le token non révoqué avec ce hash
     const storedToken = await this.userRefreshTokensRepository.findOne({
       where: { revoked: false, tokenHash: hashedToken },
-      relations: ['user', 'storeUser'], // Charger les relations nécessaires
+      relations: [
+        'user',
+        'storeUser',
+        'storeUser.store',
+        'storeUser.role',
+        'storeUser.role.permissions',
+      ], // Chargement dees relations nécessaires pour la methode genereToken
     });
 
     if (!storedToken || storedToken.expiresAt < new Date()) {
