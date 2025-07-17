@@ -107,4 +107,8 @@ export const ErrorMessages: Record<ErrorCode, { message: string; status: HttpSta
     message: 'Failed to fetch role.',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
   },
+  [ErrorCode.PERMISSION_FETCH_FAILED]: {
+    message: 'Failed to fetch permissions.',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
 };

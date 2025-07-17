@@ -19,7 +19,7 @@ export class CreateRoleDto {
 
   @IsBoolean()
   @IsOptional()
-  isDefault?: boolean;
+  isDefault: boolean;
 
   @IsNumber()
   @IsNotEmpty()
@@ -27,7 +27,7 @@ export class CreateRoleDto {
 
   @IsNumber()
   @IsNotEmpty()
-  createdByUserId?: number;
+  createdByUserId: number;
 
   @IsArray()
   @ArrayNotEmpty()

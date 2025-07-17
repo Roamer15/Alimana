@@ -151,7 +151,7 @@ export class RolesService {
         });
 
         if (permissions.length !== permissionIds.length) {
-          this.logger.warn('Some permissions not found for IDs: ' + permissionIds.join(', '));
+          this.logger.warn(`Some permissions not found for IDs:  + permissionIds.join(', ')`);
           throwHttpError(ErrorCode.PERMISSION_NOT_FOUND, { permissionIds });
         }
 
