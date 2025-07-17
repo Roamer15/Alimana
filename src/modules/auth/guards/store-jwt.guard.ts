@@ -31,7 +31,7 @@ export class StoreJwtGuard extends AuthGuard('store-jwt') {
       throw err || new UnauthorizedException();
     }
 
-    // 🛠️ Cast pour accéder aux propriétés connues (JwtPayload)
+    // Cast pour accéder aux propriétés connues (JwtPayload)
     const payload = user as unknown as JwtPayload;
 
     this.requestContextService.setContext({

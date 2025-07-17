@@ -60,6 +60,12 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
    * @returns Un objet représentant l'utilisateur validé dans le contexte de la boutique (payload pour req.user).
    */
   async validate(payload: StoreJwtPayload): Promise<StoreJwtPayload> {
+    console.log('--- StoreJwtStrategy Validate ---');
+    console.log('Payload received:', payload);
+    console.log(
+      `Attempting to find StoreUser with id: ${payload.storeUserId} and userId: ${payload.userId}`,
+    );
+
     // Validation de base : s'assurer que store_user_id existe et est lié à l'user_id global
     const storeUser = await this.storeUsersRepository.findOne({
       where: { id: payload.storeUserId, user: { id: payload.userId } },
@@ -67,12 +73,17 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
     });
 
     if (!storeUser) {
+      console.error('StoreUser NOT FOUND or not associated with user!');
+
       // Utilisation de throwHttpError pour une erreur cohérente
       throwHttpError(ErrorCode.INVALID_CREDENTIALS, {
         reason: "Jeton d'accès à la boutique invalide ou non associé à l'utilisateur.",
         details: { storeUserId: payload.storeUserId, userId: payload.userId },
       });
     }
+
+    console.log('StoreUser found:', storeUser.id);
+    console.log('StoreUser status:', storeUser.status);
 
     // Vérifier le statut de l'utilisateur dans la boutique
     if (storeUser.status !== StoreUserStatus.ACTIVE) {
@@ -84,6 +95,7 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
 
     // Retourne le payload directement comme objet utilisateur pour l'accès spécifique à la boutique
     // Assurez-vous que la structure correspond à StoreUserJwtPayload du contrôleur
+    console.log('Returning validated payload.');
     return {
       userId: payload.userId,
       email: storeUser.user.email,
@@ -115,4 +127,5 @@ Strategy: La stratégie JWT de passport-jwt.
       roleName: payload.role_name,
       permissions: payload.permissions,
     };
+    
  */

@@ -194,6 +194,8 @@ export class AuthService {
       }),
     };
 
+    console.log(`payload creer pour l'utlisateur authentifier ${JSON.stringify(payload, null)}`);
+
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: this.configService.jwtAccessTokenExpiration,
     });
@@ -215,7 +217,7 @@ export class AuthService {
     });
 
     await this.userRefreshTokensRepository.save(newRefreshToken);
-
+    console.log(`new newRefreshToken inser on database ${JSON.stringify(newRefreshToken, null)}`);
     return {
       accessToken,
       refreshToken: refreshTokenValue, // C’est celui-ci qu’on envoie au client
@@ -360,6 +362,7 @@ export class AuthService {
       }
       throwHttpError(ErrorCode.REFRESH_TOKEN_INVALID, {
         reason: 'Jeton de rafraîchissement invalide ou expiré.',
+        storedToken,
       });
     }
 
