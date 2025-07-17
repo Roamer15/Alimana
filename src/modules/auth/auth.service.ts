@@ -31,9 +31,7 @@ export class AuthService {
     private configService: AppConfigService,
     private readonly requestContextService: RequestContextService,
     private readonly logger: MyLoggerService,
-  ) {
-    console.log('✅ AuthService loaded');
-  }
+  ) {}
 
   //  Création de compte
   async registerLocal(registerDto: RegisterDto): Promise<User> {
@@ -194,7 +192,10 @@ export class AuthService {
       }),
     };
 
-    console.log(`payload creer pour l'utlisateur authentifier ${JSON.stringify(payload, null)}`);
+    this.logger.log(
+      `payload creer pour l'utlisateur authentifier ${JSON.stringify(payload, null)}`,
+      'AuthService',
+    );
 
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: this.configService.jwtAccessTokenExpiration,
@@ -217,7 +218,10 @@ export class AuthService {
     });
 
     await this.userRefreshTokensRepository.save(newRefreshToken);
-    console.log(`new newRefreshToken inser on database ${JSON.stringify(newRefreshToken, null)}`);
+    this.logger.log(
+      `new newRefreshToken inser on database ${JSON.stringify(newRefreshToken, null)}`,
+      'authservice',
+    );
     return {
       accessToken,
       refreshToken: refreshTokenValue, // C’est celui-ci qu’on envoie au client
@@ -255,13 +259,11 @@ export class AuthService {
       logoUrl: string;
     }[]
   > {
-    // const { ipAddress, userAgent } = this.requestContextService.getContext();
-
     // Récupérer toutes les entrées StoreUser pour cet utilisateur
     const storeUsers = await this.storeUsersRepository.find({
       where: {
         user: { id: userId },
-        status: StoreUserStatus.ACTIVE, // Ne récupérer que les associations actives
+        status: StoreUserStatus.ACTIVE,
       },
       relations: ['store', 'role'], // Charger les détails de la boutique et du rôle
     });
