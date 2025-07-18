@@ -103,4 +103,24 @@ export const ErrorMessages: Record<ErrorCode, { message: string; status: HttpSta
     message: 'Cash register update failed',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
   },
+  [ErrorCode.SESSION_ALREADY_OPEN]: {
+    message: 'Session is already open',
+    status: HttpStatus.CONFLICT,
+  },
+  [ErrorCode.SESSION_OPEN_FAILED]: {
+    message: 'Session is already open',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.SESSION_CLOSE_FAILED]: {
+    message: 'Session is already open',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.SESSION_NOT_FOUND]: {
+    message: 'Session is already open',
+    status: HttpStatus.NOT_FOUND,
+  },
+  [ErrorCode.SESSION_NOT_FOUND_OR_CLOSED]: {
+    message: 'Session is already open',
+    status: HttpStatus.NOT_FOUND,
+  },
 };
