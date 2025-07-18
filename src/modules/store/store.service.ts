@@ -220,6 +220,56 @@ export class StoreService {
       throw error;
     }
   }
+
+  /**
+   * Récupère une boutique par son ID.
+   * Accessible par le Super-Admin, le propriétaire de la boutique, ou un StoreUser de cette boutique.
+   * @param id L'ID de la boutique.
+   * @returns La boutique trouvée.
+   */
+
+  async findStoreById(id: number): Promise<Store> {
+    const { userId, storeUserId } = this.requestContextService.getContext();
+
+    if (!userId || !storeUserId) {
+      throwHttpError(ErrorCode.CONTEXT_INFO_NOTFOUND, {
+        userId,
+        storeUserId,
+      });
+    }
+
+    const store = await this.storeRepository.findOne({
+      where: { id },
+      relations: ['owner'],
+    });
+
+    if (!store) {
+      throwHttpError(ErrorCode.STORE_NOT_FOUND, { id });
+    }
+
+    let isAuthorized = false;
+
+    //  Si c'est le propriétaire de la boutique
+    if (store.ownerId === userId) {
+      isAuthorized = true;
+    }
+    // 3. Si c'est un StoreUser de cette boutique
+    else if (storeUserId) {
+      const isStoreUserOfThisStore = await this.storeUserRepository.findOne({
+        where: { id: storeUserId, store: { id: id }, user: { id: userId } },
+      });
+      if (isStoreUserOfThisStore) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      throw new ForbiddenException(`Accès refusé à la boutique avec l'ID ${id}.`);
+    }
+
+    return store;
+  }
+
   /**
    * Updates a store's information.
    * Accessible by the store owner or a StoreUser with 'manage_store_settings' permission.

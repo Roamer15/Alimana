@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -20,6 +21,7 @@ import { AppConfigService } from 'src/config/config.service';
 import { MyLoggerService } from 'src/my-logger/my-logger.service';
 import { PermissionKeys } from '../auth/decorators/permissions.decorator'; // Utilisé pour les permissions
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { PermissionKey } from './constants/permission-enum';
 @Controller('store')
 export class StoreController {
   constructor(
@@ -62,20 +64,31 @@ export class StoreController {
   }
 
   /**
+   * Récupère une boutique par son ID.
+   * La logique d'autorisation est gérée dans le service.
+   */
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async findStoreById(@Param('id', ParseIntPipe) id: number) {
+    return this.storeService.findStoreById(id);
+  }
+
+  /**
    * Met à jour les informations d'une boutique.
-   * Accessible par le Super-Admin, le propriétaire de la boutique, ou un StoreUser avec permission 'manage_store_settings'.
+   * Accessible par le Admin, le propriétaire de la boutique, ou un StoreUser avec permission 'manage_store_settings'.
    */
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(StoreJwtGuard, PermissionsGuard)
-  @PermissionKeys('manage_store_settings')
+  @PermissionKeys(PermissionKey.MANAGE_STORE_SETTINGS)
   async updateStore(@Param('id', ParseIntPipe) id: number, @Body() updateStoreDto: UpdateStoreDto) {
     return this.storeService.updateStore(id, updateStoreDto);
   }
 
   /**
    * Supprime une boutique.
-   * Accessible uniquement par les Super-Admins.
+   * Accessible uniquement par les Admins.
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
