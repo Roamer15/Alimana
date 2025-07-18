@@ -13,6 +13,7 @@ import { ClsModule } from 'nestjs-cls';
 import { RequestContextModule } from './common/context/request-context/request-context.module';
 import { PayloadContextMiddleware } from './common/middleware/payload-context.middleware';
 import { StoreModule } from './modules/store/store.module';
+import { CashRegisterModule } from './modules/cash-register/cash-register.module';
 // Importez votre middleware de payload
 
 @Module({
@@ -54,6 +55,7 @@ import { StoreModule } from './modules/store/store.module';
         logging: configService.typeormLogging,
       }),
     }),
+    CashRegisterModule,
   ],
   controllers: [AppController],
   providers: [AppService],
