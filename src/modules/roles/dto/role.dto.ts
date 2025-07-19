@@ -1,12 +1,4 @@
-import {
-  ArrayNotEmpty,
-  IsArray,
-  IsBoolean,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateRoleDto {
   @IsString()
@@ -16,18 +8,6 @@ export class CreateRoleDto {
   @IsString()
   @IsOptional()
   description?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  isDefault: boolean;
-
-  @IsNumber()
-  @IsNotEmpty()
-  storeId: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  createdByUserId: number;
 
   @IsArray()
   @ArrayNotEmpty()

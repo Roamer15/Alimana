@@ -7,6 +7,7 @@ import { Repository, In } from 'typeorm';
 import { MyLoggerService } from 'src/my-logger/my-logger.service';
 import { throwHttpError } from 'src/common/errors/http-exception.helper';
 import { ErrorCode } from 'src/common/errors/error-codes.enum';
+import { RequestContextService } from 'src/common/context/request-context/request-context.service';
 
 @Injectable()
 export class RolesService {
@@ -15,13 +16,29 @@ export class RolesService {
     private roleRepository: Repository<Role>,
     @InjectRepository(Permission)
     private permissionRepository: Repository<Permission>,
+    private readonly requestContextService: RequestContextService,
     private readonly logger: MyLoggerService,
   ) {}
+
+  private validateStoreAccess(storeId: number): void {
+    const { storeId: contextStoreId } = this.requestContextService.getContext();
+
+    if (!contextStoreId) {
+      throwHttpError(ErrorCode.CONTEXT_INFO_NOTFOUND);
+    }
+
+    if (contextStoreId !== storeId) {
+      throwHttpError(ErrorCode.FORBIDDEN, {
+        reason: 'Access denied. You can only view settings for your current store.',
+      });
+    }
+  }
 
   /**
    * Create a new role and assign permissions to it.
    */
-  async createRole(dto: CreateRoleDto): Promise<Role> {
+  async createRole(storeId: number, dto: CreateRoleDto): Promise<Role> {
+    this.validateStoreAccess(storeId);
     return await this.roleRepository.manager.transaction(async (manager) => {
       try {
         this.logger.log(

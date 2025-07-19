@@ -5,15 +5,19 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 import { UpdateRolePermissionsDto } from './dto/update-role-permissions.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { StoreJwtGuard } from '../auth/guards/store-jwt.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { PermissionKeys } from '../auth/decorators/permissions.decorator';
+import { PermissionKey } from '../store/constants/permission-enum';
 
 @UseGuards(JwtAuthGuard)
-@Controller('roles')
+@Controller('store/:storeId/roles')
 export class RolesController {
   constructor(private rolesService: RolesService) {}
-  @UseGuards(StoreJwtGuard)
+  @UseGuards(StoreJwtGuard, PermissionsGuard)
+  @PermissionKeys(PermissionKey.MANAGE_ROLES)
   @Post()
-  async createRole(@Body() createRoleDto: CreateRoleDto) {
-    return this.rolesService.createRole(createRoleDto);
+  async createRole(@Param('storeId') storeId: number, @Body() createRoleDto: CreateRoleDto) {
+    return this.rolesService.createRole(storeId, createRoleDto);
   }
 
   @Get()
