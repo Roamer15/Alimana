@@ -1,21 +1,27 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
-// import { StoreUserJwtPayload, UserJwtPayload } from '../auth/auth.controller';
-import { StoreService } from './store.service';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { StoreService, UpdateStoreDto } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
+import { StoreJwtGuard } from '../auth/guards/store-jwt.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Response } from 'express';
 import { AppConfigService } from 'src/config/config.service';
 import { MyLoggerService } from 'src/my-logger/my-logger.service';
-
-// Interface pour étendre l'objet Request d'Express avec le payload JWT
-// interface JwtAuthRequest extends ExpressRequest {
-//   user: UserJwtPayload;
-// }
-
-// interface StoreJwtAuthRequest extends ExpressRequest {
-//   user: StoreUserJwtPayload;
-// }
-
+import { PermissionKeys } from '../auth/decorators/permissions.decorator'; // Utilisé pour les permissions
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { PermissionKey } from './constants/permission-enum';
 @Controller('store')
 export class StoreController {
   constructor(
@@ -57,72 +63,38 @@ export class StoreController {
     return { message: 'Store created successfully and session opened.', store };
   }
 
-  // /**
-  //  * Récupère toutes les boutiques.
-  //  * Accessible uniquement par les Super-Admins.
-  //  */
-  // @Get()
-  // @HttpCode(HttpStatus.OK)
-  // @UseGuards(JwtAuthGuard)
-  // async findAllStores(@Req() req: JwtAuthRequest) {
-  //   if (!req.user.canCreateStore) {
-  //     throw new ForbiddenException("Vous n'êtes pas autorisé à lister toutes les boutiques.");
-  //   }
-  //   return this.storeService.findAllStores();
-  // }
+  /**
+   * Récupère une boutique par son ID.
+   * La logique d'autorisation est gérée dans le service.
+   */
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async findStoreById(@Param('id', ParseIntPipe) id: number) {
+    return this.storeService.findStoreById(id);
+  }
 
-  // /**
-  //  * Récupère une boutique par son ID.
-  //  * Accessible par le Super-Admin, le propriétaire de la boutique, ou un StoreUser de cette boutique.
-  //  */
-  // @Get(':id')
-  // @HttpCode(HttpStatus.OK)
-  // // Utilise StoreJwtGuard pour s'assurer que l'utilisateur est dans le contexte d'une boutique
-  // // ou JwtAuthGuard si l'utilisateur est un Super-Admin sans contexte de boutique.
-  // // La logique d'autorisation est gérée dans le service.
-  // @UseGuards(JwtAuthGuard) // Utilise JwtAuthGuard pour obtenir l'ID utilisateur global
-  // findStoreById(@Param('id', ParseIntPipe) id: number, @Req() req: JwtAuthRequest) {
-  //   // Si l'utilisateur a un store_user_id dans son token (il est dans le contexte d'une boutique)
-  //   const storeUserId = (req as StoreJwtAuthRequest).user?.storeUserId;
-  //   return this.storeService.findStoreById(id, req.user.sub, storeUserId);
-  // }
+  /**
+   * Met à jour les informations d'une boutique.
+   * Accessible par le Admin, le propriétaire de la boutique, ou un StoreUser avec permission 'manage_store_settings'.
+   */
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(StoreJwtGuard, PermissionsGuard)
+  @PermissionKeys(PermissionKey.MANAGE_STORE_SETTINGS)
+  async updateStore(@Param('id', ParseIntPipe) id: number, @Body() updateStoreDto: UpdateStoreDto) {
+    return this.storeService.updateStore(id, updateStoreDto);
+  }
 
-  // /**
-  //  * Met à jour les informations d'une boutique.
-  //  * Accessible par le Super-Admin, le propriétaire de la boutique, ou un StoreUser avec permission 'manage_store_settings'.
-  //  */
-  // @Patch(':id')
-  // @HttpCode(HttpStatus.OK)
-  // // Utilise StoreJwtGuard pour s'assurer que l'utilisateur est dans le contexte d'une boutique
-  // // et RolesGuard/PermissionsGuard pour vérifier les permissions.
-  // // JwtAuthGuard est un fallback pour les Super-Admins.
-  // @UseGuards(StoreJwtGuard) // Assure que nous avons le contexte de la boutique et les permissions
-  // @PermissionKeys('manage_store_settings') // Nécessite la permission 'manage_store_settings'
-  // async updateStore(
-  //   @Param('id', ParseIntPipe) id: number,
-  //   @Body() updateStoreDto: UpdateStoreDto,
-  //   @Req() req: StoreJwtAuthRequest, // req.user est StoreUserJwtPayload ici
-  // ) {
-  //   const userId = req.user.sub;
-  //   const storeUserId = req.user.store_user_id;
-  //   const permissions = req.user.permissions; // Récupère les permissions du token
-
-  //   // Le service gérera la logique d'autorisation complexe (SuperAdmin, Owner, StoreUser avec permission)
-  //   return this.storeService.updateStore(id, updateStoreDto, userId, storeUserId, permissions);
-  // }
-
-  // /**
-  //  * Supprime une boutique.
-  //  * Accessible uniquement par les Super-Admins.
-  //  */
-  // @Delete(':id')
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // @UseGuards(JwtAuthGuard) // Seul le JwtAuthGuard est nécessaire pour les Super-Admins
-  // async deleteStore(@Param('id', ParseIntPipe) id: number, @Req() req: JwtAuthRequest) {
-  //   if (!req.user.canCreateStore) {
-  //     throw new ForbiddenException("Vous n'êtes pas autorisé à supprimer une boutique.");
-  //   }
-  //   await this.storeService.deleteStore(id, req.user.sub);
-  //   return; // Retourne un 204 No Content
-  // }
+  /**
+   * Supprime une boutique.
+   * Accessible uniquement par les Admins.
+   */
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  async deleteStore(@Param('id', ParseIntPipe) id: number) {
+    await this.storeService.deleteStore(id);
+    return { message: 'successfully Delete store' };
+  }
 }

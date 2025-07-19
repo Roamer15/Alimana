@@ -111,4 +111,8 @@ export const ErrorMessages: Record<ErrorCode, { message: string; status: HttpSta
     message: 'Failed to fetch permissions.',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
   },
+  [ErrorCode.CONTEXT_INFO_NOTFOUND]: {
+    message: 'les informations du context sont abscend',
+    status: HttpStatus.NOT_FOUND,
+  },
 };
