@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateCashRegisterDto {
   @IsString()
@@ -8,9 +8,6 @@ export class CreateCashRegisterDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsInt()
-  storeId: number;
 
   @IsOptional()
   @IsBoolean()

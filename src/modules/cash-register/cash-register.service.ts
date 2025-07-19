@@ -8,6 +8,7 @@ import { CreateCashRegisterDto } from './dto/create-cash-register.dto';
 import { Store } from 'src/entities/store.entity';
 import { throwHttpError } from 'src/common/errors/http-exception.helper';
 import { ErrorCode } from 'src/common/errors/error-codes.enum';
+import { RequestContextService } from 'src/common/context/request-context/request-context.service';
 
 @Injectable()
 export class CashRegisterService {
@@ -17,17 +18,33 @@ export class CashRegisterService {
     private readonly cashRegisterRepo: Repository<CashRegister>,
     @InjectRepository(Store)
     private storeRepo: Repository<Store>,
+    private readonly requestContextService: RequestContextService,
     private readonly logger: MyLoggerService,
   ) {}
-  async createCashRegister(dto: CreateCashRegisterDto): Promise<CashRegister> {
+
+  private validateStoreAccess(storeId: number): void {
+    const { storeId: contextStoreId } = this.requestContextService.getContext();
+
+    if (!contextStoreId) {
+      throwHttpError(ErrorCode.CONTEXT_INFO_NOTFOUND);
+    }
+
+    if (contextStoreId !== storeId) {
+      throwHttpError(ErrorCode.FORBIDDEN, {
+        reason: 'Access denied. You can only view settings for your current store.',
+      });
+    }
+  }
+  async createCashRegister(storeId: number, dto: CreateCashRegisterDto): Promise<CashRegister> {
+    this.validateStoreAccess(storeId);
     return this.cashRegisterRepo.manager.transaction(async (manager) => {
       try {
-        this.logger.log(`Creating cash register for store ID: ${dto.storeId}`, this.ctx);
+        this.logger.log(`Creating cash register for store ID: ${storeId}`, this.ctx);
 
-        const store = await manager.getRepository(Store).findOne({ where: { id: dto.storeId } });
+        const store = await manager.getRepository(Store).findOne({ where: { id: storeId } });
         if (!store) {
-          this.logger.warn(`Store not found: ${dto.storeId}`, this.ctx);
-          throwHttpError(ErrorCode.STORE_NOT_FOUND, { storeId: dto.storeId });
+          this.logger.warn(`Store not found: ${storeId}`, this.ctx);
+          throwHttpError(ErrorCode.STORE_NOT_FOUND, { storeId: storeId });
         }
 
         const register = manager.getRepository(CashRegister).create({
@@ -50,6 +67,7 @@ export class CashRegisterService {
   }
 
   async getAllCashRegisters(storeId: number): Promise<CashRegister[]> {
+    this.validateStoreAccess(storeId);
     try {
       this.logger.log(`Fetching cash registers for store ID: ${storeId}`, this.ctx);
       const allRegisters = await this.cashRegisterRepo.find({ where: { store: { id: storeId } } });
@@ -75,7 +93,8 @@ export class CashRegisterService {
     }
   }
 
-  async getCashRegisterById(id: number): Promise<CashRegister> {
+  async getCashRegisterById(storeId: number, id: number): Promise<CashRegister> {
+    this.validateStoreAccess(storeId);
     try {
       this.logger.log(`Fetching cash register ID: ${id}`, this.ctx);
       const register = await this.cashRegisterRepo.findOne({ where: { id } });
@@ -92,10 +111,15 @@ export class CashRegisterService {
     }
   }
 
-  async updateCashRegister(id: number, dto: UpdateCashRegisterDto): Promise<CashRegister> {
+  async updateCashRegister(
+    storeId: number,
+    id: number,
+    dto: UpdateCashRegisterDto,
+  ): Promise<CashRegister> {
+    this.validateStoreAccess(storeId);
     try {
       this.logger.log(`Updating cash register ID: ${id}`, this.ctx);
-      const register = await this.getCashRegisterById(id);
+      const register = await this.getCashRegisterById(storeId, id);
       Object.assign(register, dto);
       return await this.cashRegisterRepo.save(register);
     } catch (error) {
@@ -111,7 +135,8 @@ export class CashRegisterService {
     }
   }
 
-  async deleteCashRegister(id: number): Promise<void> {
+  async deleteCashRegister(storeId: number, id: number): Promise<void> {
+    this.validateStoreAccess(storeId);
     try {
       this.logger.log(`Deleting cash register ID: ${id}`, this.ctx);
       const result = await this.cashRegisterRepo.delete(id);
