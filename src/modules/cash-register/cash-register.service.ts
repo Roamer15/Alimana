@@ -8,7 +8,6 @@ import { CreateCashRegisterDto } from './dto/create-cash-register.dto';
 import { Store } from 'src/entities/store.entity';
 import { throwHttpError } from 'src/common/errors/http-exception.helper';
 import { ErrorCode } from 'src/common/errors/error-codes.enum';
-// import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
 
 @Injectable()
 export class CashRegisterService {

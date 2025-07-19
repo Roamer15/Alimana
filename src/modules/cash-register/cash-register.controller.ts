@@ -15,7 +15,7 @@ import { CreateCashRegisterDto } from './dto/create-cash-register.dto';
 import { UpdateCashRegisterDto } from './dto/update-cash-register.dto';
 
 @UseGuards(JwtAuthGuard)
-@Controller('cash-register')
+@Controller('store/storeId:/cash-register')
 export class CashRegisterController {
   constructor(private readonly cashRegisterService: CashRegisterService) {}
 
