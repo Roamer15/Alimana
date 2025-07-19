@@ -101,7 +101,7 @@ export class Store {
   owner: User;
 
   @Column()
-  ownerId: number; // Clé étrangère explicite (facultative mais recommandée pour les requêtes rapides)
+  ownerId: number;
 
   // --- Relations retirées (Accéder via les services ou dépôts dédiés) ---
   // sales, expenses, cashRegisterSessions, auditLogs, inventoryMovements,

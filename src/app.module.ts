@@ -15,6 +15,7 @@ import { PayloadContextMiddleware } from './common/middleware/payload-context.mi
 import { StoreModule } from './modules/store/store.module';
 import { CashRegisterModule } from './modules/cash-register/cash-register.module';
 import { CashRegisterSessionsModule } from './modules/cash-register-sessions/cash-register-sessions.module';
+import { StoreSettingModule } from './modules/store-setting/store-setting.module';
 // Importez votre middleware de payload
 
 @Module({
@@ -23,6 +24,7 @@ import { CashRegisterSessionsModule } from './modules/cash-register-sessions/cas
     AuthModule,
     AppConfigModule,
     StoreModule,
+    StoreSettingModule,
     // Configuration de ClsModule au niveau racine
     ClsModule.forRoot({
       global: true, // Rend ClsModule globalement disponible

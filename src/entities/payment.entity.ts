@@ -27,7 +27,7 @@ export class Payment {
   @ManyToOne(() => PaymentMethod, (paymentMethod) => paymentMethod.payments, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'paymentMethodId' })
+  @JoinColumn()
   paymentMethod: PaymentMethod;
 
   @Index()

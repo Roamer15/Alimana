@@ -123,4 +123,8 @@ export const ErrorMessages: Record<ErrorCode, { message: string; status: HttpSta
     message: 'Session is already open',
     status: HttpStatus.NOT_FOUND,
   },
+  [ErrorCode.CONTEXT_INFO_NOTFOUND]: {
+    message: 'les informations du context sont abscend',
+    status: HttpStatus.NOT_FOUND,
+  },
 };

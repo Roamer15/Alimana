@@ -18,6 +18,7 @@ import { AppConfigModule } from 'src/config/config.module';
 
 import { RequestContextModule } from 'src/common/context/request-context/request-context.module';
 import { MyLoggerModule } from 'src/my-logger/my-logger.module';
+import { PermissionsGuard } from './guards/permissions.guard';
 
 @Module({
   imports: [
@@ -45,8 +46,16 @@ import { MyLoggerModule } from 'src/my-logger/my-logger.module';
     JwtAuthGuard,
     StoreJwtStrategy,
     StoreJwtGuard,
+    PermissionsGuard,
   ],
   controllers: [AuthController],
-  exports: [AuthService, LocalStrategy],
+  exports: [
+    AuthService,
+    LocalStrategy,
+    StoreJwtStrategy,
+    PermissionsGuard,
+    StoreJwtGuard,
+    JwtAuthGuard,
+  ],
 })
 export class AuthModule {}

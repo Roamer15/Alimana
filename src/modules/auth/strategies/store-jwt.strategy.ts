@@ -67,7 +67,6 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
     });
 
     if (!storeUser) {
-      // Utilisation de throwHttpError pour une erreur cohérente
       throwHttpError(ErrorCode.INVALID_CREDENTIALS, {
         reason: "Jeton d'accès à la boutique invalide ou non associé à l'utilisateur.",
         details: { storeUserId: payload.storeUserId, userId: payload.userId },
@@ -82,8 +81,6 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
       });
     }
 
-    // Retourne le payload directement comme objet utilisateur pour l'accès spécifique à la boutique
-    // Assurez-vous que la structure correspond à StoreUserJwtPayload du contrôleur
     return {
       userId: payload.userId,
       email: storeUser.user.email,
@@ -96,23 +93,3 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
     };
   }
 }
-
-/**
- * PassportStrategy: La classe de base de NestJS.
-
-Strategy: La stratégie JWT de passport-jwt.
-
-'store-jwt': C'est le nom unique de cette stratégie.
- Lorsque vous utilisez des gardes (@UseGuards(AuthGuard('store-jwt'))),
-  ce nom est utilisé pour dire à Passport quelle stratégie appliquer pour 
-  les routes nécessitant un accès au magasin.
-
-  return {
-      userId: payload.sub,
-      storeUserId: payload.store_user_id,
-      storeId: payload.store_id,
-      roleId: payload.role_id,
-      roleName: payload.role_name,
-      permissions: payload.permissions,
-    };
- */
