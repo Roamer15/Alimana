@@ -13,6 +13,8 @@ export enum PermissionKey {
   OPEN_CASH_REGISTER_SESSION = 'open_cash_register_session',
   CLOSE_CASH_REGISTER_SESSION = 'close_cash_register_session',
   VIEW_CASH_REGISTER_SESSIONS = 'view_cash_register_sessions',
+  MANAGE_CASH_MOVEMENTS = 'manage_cash_movements',
+
   MANAGE_PAYMENT_METHODS = 'manage_payment_methods',
 
   // Products & Inventory
