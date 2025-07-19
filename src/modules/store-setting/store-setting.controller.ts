@@ -10,7 +10,7 @@ class UpdateStoreSettingDto {
   value: string; // La valeur à modifier
 }
 
-@Controller('stores/:storeId/settings')
+@Controller('store/:storeId/settings')
 export class StoreSettingController {
   constructor(private readonly storeSettingService: StoreSettingService) {}
 
