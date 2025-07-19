@@ -8,7 +8,7 @@ export class SaleItem {
   id: number;
 
   @ManyToOne(() => Sale, (sale) => sale.saleItems, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'saleId' })
+  @JoinColumn()
   sale: Sale;
 
   @Index()
@@ -16,7 +16,7 @@ export class SaleItem {
   saleId: number;
 
   @ManyToOne(() => Product, { eager: true })
-  @JoinColumn({ name: 'productId' })
+  @JoinColumn()
   product: Product;
 
   @Index()

@@ -32,7 +32,7 @@ export class Sale {
   storeId: number;
 
   @ManyToOne(() => StoreUser)
-  @JoinColumn({ name: 'createdById' })
+  @JoinColumn()
   createdBy: StoreUser;
 
   @Index()

@@ -17,7 +17,7 @@ export class Receipt {
   @OneToOne(() => Sale, (sale) => sale.receipt, {
     onDelete: 'SET NULL', // ou 'NO ACTION' selon besoin
   })
-  @JoinColumn({ name: 'saleId' }) // colonne FK dans receipt
+  @JoinColumn() // colonne FK dans receipt
   sale: Sale;
 
   @Column({ nullable: true })

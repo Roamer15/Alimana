@@ -13,6 +13,7 @@ import { ClsModule } from 'nestjs-cls';
 import { RequestContextModule } from './common/context/request-context/request-context.module';
 import { PayloadContextMiddleware } from './common/middleware/payload-context.middleware';
 import { StoreModule } from './modules/store/store.module';
+import { StoreSettingModule } from './modules/store-setting/store-setting.module';
 // Importez votre middleware de payload
 
 @Module({
@@ -21,6 +22,7 @@ import { StoreModule } from './modules/store/store.module';
     AuthModule,
     AppConfigModule,
     StoreModule,
+    StoreSettingModule,
     // Configuration de ClsModule au niveau racine
     ClsModule.forRoot({
       global: true, // Rend ClsModule globalement disponible
