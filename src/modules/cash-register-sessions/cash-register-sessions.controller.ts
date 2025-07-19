@@ -14,7 +14,6 @@ import { CashRegisterSessionsService } from './cash-register-sessions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PermissionKeys } from '../auth/decorators/permissions.decorator';
-import { StoreJwtGuard } from '../auth/guards/store-jwt.guard';
 import { PermissionKey } from '../store/constants/permission-enum';
 import { CashRegisterSession } from 'src/entities/cash-register-session.entity';
 import { OpenSessionDto } from './dto/open-session.dto';
@@ -86,7 +85,6 @@ export class CashRegisterSessionsController {
    * Nécessite la permission 'view_cash_register_sessions'.
    */
   @Get(':cashRegisterId/open')
-  @UseGuards(StoreJwtGuard, PermissionsGuard)
   @PermissionKeys(PermissionKey.VIEW_CASH_REGISTER_SESSIONS)
   @HttpCode(HttpStatus.OK)
   async getOpenSessionByCashRegister(
