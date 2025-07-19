@@ -48,8 +48,8 @@ export class RolesService {
 
         // Fetch permissions within transaction
         const uniquePermissionIds = [...new Set(permissionIds)];
-        const permissions = await manager.getRepository(Permission).find({
-          where: { id: In(permissionIds) },
+        const permissions = await manager.find(Permission, {
+          where: { id: In(uniquePermissionIds) },
         });
         if (permissions.length !== uniquePermissionIds.length) {
           // Identify missing IDs
