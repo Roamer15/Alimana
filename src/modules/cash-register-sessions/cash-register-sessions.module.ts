@@ -11,13 +11,22 @@ import { Permission } from 'src/entities/permission.entity';
 import { Role } from 'src/entities/role.entity';
 import { Sale } from 'src/entities/sale.entity';
 import { StoreUser } from 'src/entities/store-user.entity';
+import { CashRegisterSession } from 'src/entities/cash-register-session.entity';
 
 @Module({
   imports: [
     MyLoggerModule,
     AuthModule,
     RequestContextModule,
-    TypeOrmModule.forFeature([CashRegister, StoreUser, Sale, CashMovement, Role, Permission]),
+    TypeOrmModule.forFeature([
+      CashRegister,
+      StoreUser,
+      Sale,
+      CashMovement,
+      Role,
+      Permission,
+      CashRegisterSession,
+    ]),
   ],
   providers: [CashRegisterSessionsService],
   controllers: [CashRegisterSessionsController],
