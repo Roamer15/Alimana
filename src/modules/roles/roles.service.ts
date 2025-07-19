@@ -94,7 +94,10 @@ export class RolesService {
     this.validateStoreAccess(storeId);
     try {
       this.logger.log('Fetching all roles');
-      return await this.roleRepository.find({ relations: ['permissions'] });
+      return await this.roleRepository.find({
+        where: { storeId },
+        relations: ['permissions'],
+      });
     } catch (error: unknown) {
       if (error instanceof Error) {
         this.logger.error('Error fetching all roles', error.stack || error.message);
@@ -134,23 +137,45 @@ export class RolesService {
   /**
    * Update the basic properties of a role (not its permissions).
    */
-  async updateRole(storeId: number, id: number, updateData: Partial<Role>): Promise<Role | null> {
+  async updateRole(storeId: number, id: number, updateData: Partial<Role>): Promise<Role> {
     this.validateStoreAccess(storeId);
+
     try {
-      this.logger.log(`Updating role ID: ${id} with data: ${JSON.stringify(updateData)}`);
-      const result = await this.roleRepository.update(id, updateData);
-      if (result.affected === 0) {
-        this.logger.warn(`Role with ID ${id} not found for update`);
-        throwHttpError(ErrorCode.ROLE_NOT_FOUND, { id });
+      this.logger.log(`Updating role ID ${id} in store ${storeId}`);
+
+      // 1. First verify ownership
+      const existingRole = await this.roleRepository.findOne({
+        where: { id, storeId }, // Critical security filter
+      });
+
+      if (!existingRole) {
+        this.logger.warn(`Role ${id} not found in store ${storeId}`);
+        throwHttpError(ErrorCode.ROLE_NOT_FOUND, { id, storeId });
       }
-      return this.getRoleById(storeId, id);
+
+      // 2. Apply updates safely
+      Object.assign(existingRole, updateData);
+      const updatedRole = await this.roleRepository.save(existingRole);
+
+      this.logger.log(`Successfully updated role ${id} in store ${storeId}`);
+      return updatedRole;
     } catch (error: unknown) {
       if (error instanceof Error) {
-        this.logger.error(`Error updating role ID: ${id}`, error.stack || error.message);
-        throwHttpError(ErrorCode.ROLE_UPDATE_FAILED, { id, error: error.message });
+        this.logger.error(
+          `Failed to update role ${id} in store ${storeId}`,
+          error.stack || error.message,
+        );
+        throwHttpError(ErrorCode.ROLE_UPDATE_FAILED, {
+          id,
+          storeId,
+          error: error.message,
+        });
       }
-      // If error is not an instance of Error, throw a generic error
-      throwHttpError(ErrorCode.ROLE_UPDATE_FAILED, { id, error: String(error) });
+      throwHttpError(ErrorCode.ROLE_UPDATE_FAILED, {
+        id,
+        storeId,
+        error: String(error),
+      });
     }
   }
 
@@ -211,20 +236,41 @@ export class RolesService {
    * Delete a role by its ID.
    */
   async deleteRole(storeId: number, id: number): Promise<void> {
-    this.validateStoreAccess(storeId);
+    this.validateStoreAccess(storeId); // Keep request-level validation
+
     try {
-      this.logger.log(`Deleting role with ID: ${id}`);
-      const result = await this.roleRepository.delete(id);
-      if (result.affected === 0) {
-        this.logger.warn(`Role with ID ${id} not found for deletion`);
-        throwHttpError(ErrorCode.ROLE_NOT_FOUND, { id });
+      this.logger.log(`Attempting to delete role ID ${id} from store ${storeId}`);
+
+      // First verify the role exists AND belongs to this store
+      const role = await this.roleRepository.findOne({
+        where: { id, storeId }, // Critical: Compound where clause
+      });
+
+      if (!role) {
+        this.logger.warn(`Role ${id} not found in store ${storeId}`);
+        throwHttpError(ErrorCode.ROLE_NOT_FOUND, { id, storeId });
       }
-      this.logger.log(`Role with ID: ${id} deleted`);
+
+      // Only then proceed with deletion
+      await this.roleRepository.remove(role);
+      this.logger.log(`Successfully deleted role ${id} from store ${storeId}`);
     } catch (error) {
       if (error instanceof Error) {
-        this.logger.error(`Error deleting role with ID: ${id}`, error.stack || error.message);
-        throwHttpError(ErrorCode.ROLE_DELETE_FAILED, { id, error: error.message });
+        this.logger.error(
+          `Failed to delete role ${id} from store ${storeId}`,
+          error.stack || error.message,
+        );
+        throwHttpError(ErrorCode.ROLE_DELETE_FAILED, {
+          id,
+          storeId,
+          error: error.message,
+        });
       }
+      throwHttpError(ErrorCode.ROLE_DELETE_FAILED, {
+        id,
+        storeId,
+        error: String(error),
+      });
     }
   }
 }
