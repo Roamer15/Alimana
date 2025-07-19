@@ -81,6 +81,48 @@ export const ErrorMessages: Record<ErrorCode, { message: string; status: HttpSta
     message: 'Fournisseur introuvable.',
     status: HttpStatus.NOT_FOUND,
   },
+
+  // Cash register
+  [ErrorCode.CASH_REGISTER_CREATION_FAILED]: {
+    message: 'Cash register creation failed',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.CASH_REGISTER_FETCH_FAILED]: {
+    message: 'Cash register fetch failed',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.CASH_REGISTER_NOT_FOUND]: {
+    message: 'Cash register not found',
+    status: HttpStatus.NOT_FOUND,
+  },
+  [ErrorCode.CASH_REGISTER_DELETE_FAILED]: {
+    message: 'Cash register delete failed',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.CASH_REGISTER_UPDATE_FAILED]: {
+    message: 'Cash register update failed',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.SESSION_ALREADY_OPEN]: {
+    message: 'Session is already open',
+    status: HttpStatus.CONFLICT,
+  },
+  [ErrorCode.SESSION_OPEN_FAILED]: {
+    message: 'Session is already open',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.SESSION_CLOSE_FAILED]: {
+    message: 'Session is already open',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.SESSION_NOT_FOUND]: {
+    message: 'Session is already open',
+    status: HttpStatus.NOT_FOUND,
+  },
+  [ErrorCode.SESSION_NOT_FOUND_OR_CLOSED]: {
+    message: 'Session is already open',
+    status: HttpStatus.NOT_FOUND,
+  },
   [ErrorCode.CONTEXT_INFO_NOTFOUND]: {
     message: 'les informations du context sont abscend',
     status: HttpStatus.NOT_FOUND,
