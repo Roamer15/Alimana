@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Post, Patch, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Patch,
+  UseGuards,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { CreateRoleDto } from './dto/role.dto';
 import { RolesService } from './roles.service';
 import { UpdateRoleDto } from './dto/update-role.dto';
@@ -10,33 +20,54 @@ import { PermissionKeys } from '../auth/decorators/permissions.decorator';
 import { PermissionKey } from '../store/constants/permission-enum';
 
 @UseGuards(JwtAuthGuard)
+@UseGuards(StoreJwtGuard, PermissionsGuard)
+@PermissionKeys(PermissionKey.MANAGE_ROLES)
 @Controller('store/:storeId/roles')
 export class RolesController {
   constructor(private rolesService: RolesService) {}
-  @UseGuards(StoreJwtGuard, PermissionsGuard)
-  @PermissionKeys(PermissionKey.MANAGE_ROLES)
   @Post()
-  async createRole(@Param('storeId') storeId: number, @Body() createRoleDto: CreateRoleDto) {
+  async createRole(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Body() createRoleDto: CreateRoleDto,
+  ) {
     return this.rolesService.createRole(storeId, createRoleDto);
   }
-
   @Get()
-  async getRoles() {
-    return this.rolesService.getAllRoles();
+  async getRoles(@Param('storeId', ParseIntPipe) storeId: number) {
+    return this.rolesService.getAllRoles(storeId);
   }
 
   @Get(':id')
-  async getRoleById(@Param('id') id: number) {
-    return this.rolesService.getRoleById(id);
+  async getRoleById(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.rolesService.getRoleById(storeId, id);
   }
 
   @Patch(':id')
-  async updateRole(@Param('id') id: number, @Body() dto: UpdateRoleDto) {
-    return this.rolesService.updateRole(id, dto);
+  async updateRole(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateRoleDto,
+  ) {
+    return this.rolesService.updateRole(storeId, id, dto);
   }
 
   @Patch(':id/permissions')
-  async updatePermissions(@Param('id') id: number, @Body() dto: UpdateRolePermissionsDto) {
-    return this.rolesService.updateRolePermissions(id, dto.permissionIds);
+  async updatePermissions(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateRolePermissionsDto,
+  ) {
+    return this.rolesService.updateRolePermissions(storeId, id, dto.permissionIds);
+  }
+
+  @Delete(':id')
+  async deleteRole(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.rolesService.deleteRole(storeId, id);
   }
 }

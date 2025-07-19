@@ -47,19 +47,27 @@ export class RolesService {
         const { permissionIds, ...roleData } = dto;
 
         // Fetch permissions within transaction
+        const uniquePermissionIds = [...new Set(permissionIds)];
         const permissions = await manager.getRepository(Permission).find({
           where: { id: In(permissionIds) },
         });
-
-        if (permissions.length !== permissionIds.length) {
-          this.logger.warn('Some permissions not found for IDs: ' + permissionIds.join(', '));
-          throwHttpError(ErrorCode.PERMISSION_NOT_FOUND, { permissionIds });
+        if (permissions.length !== uniquePermissionIds.length) {
+          // Identify missing IDs
+          const foundIds = new Set(permissions.map((p) => p.id));
+          const missingIds = uniquePermissionIds.filter((id) => !foundIds.has(id));
+          throwHttpError(ErrorCode.PERMISSION_NOT_FOUND, { missingIds });
         }
 
+        const { storeUserId: createdByUserId } = this.requestContextService.getContext();
+        if (!createdByUserId) {
+          throwHttpError(ErrorCode.CONTEXT_INFO_NOTFOUND, { field: 'storeUserId' });
+        }
         // Create role and assign permissions within the same transaction
         const role = manager.getRepository(Role).create({
           ...roleData,
           permissions,
+          storeId,
+          createdByUserId,
         });
 
         const savedRole = await manager.getRepository(Role).save(role);
@@ -82,7 +90,8 @@ export class RolesService {
   /**
    * Retrieve all roles from the database, including their permissions.
    */
-  async getAllRoles(): Promise<Role[]> {
+  async getAllRoles(storeId: number): Promise<Role[]> {
+    this.validateStoreAccess(storeId);
     try {
       this.logger.log('Fetching all roles');
       return await this.roleRepository.find({ relations: ['permissions'] });
@@ -99,7 +108,8 @@ export class RolesService {
   /**
    * Retrieve a single role by its ID, including its permissions.
    */
-  async getRoleById(id: number): Promise<Role | null> {
+  async getRoleById(storeId: number, id: number): Promise<Role | null> {
+    this.validateStoreAccess(storeId);
     try {
       this.logger.log(`Fetching role by ID: ${id}`);
       const role = await this.roleRepository.findOne({
@@ -124,7 +134,8 @@ export class RolesService {
   /**
    * Update the basic properties of a role (not its permissions).
    */
-  async updateRole(id: number, updateData: Partial<Role>): Promise<Role | null> {
+  async updateRole(storeId: number, id: number, updateData: Partial<Role>): Promise<Role | null> {
+    this.validateStoreAccess(storeId);
     try {
       this.logger.log(`Updating role ID: ${id} with data: ${JSON.stringify(updateData)}`);
       const result = await this.roleRepository.update(id, updateData);
@@ -132,7 +143,7 @@ export class RolesService {
         this.logger.warn(`Role with ID ${id} not found for update`);
         throwHttpError(ErrorCode.ROLE_NOT_FOUND, { id });
       }
-      return this.getRoleById(id);
+      return this.getRoleById(storeId, id);
     } catch (error: unknown) {
       if (error instanceof Error) {
         this.logger.error(`Error updating role ID: ${id}`, error.stack || error.message);
@@ -146,8 +157,13 @@ export class RolesService {
   /**
    * Update the permissions assigned to a role.
    */
-  async updateRolePermissions(roleId: number, permissionIds: number[]): Promise<Role> {
+  async updateRolePermissions(
+    storeId: number,
+    roleId: number,
+    permissionIds: number[],
+  ): Promise<Role> {
     return await this.roleRepository.manager.transaction(async (manager) => {
+      this.validateStoreAccess(storeId);
       try {
         this.logger.log(
           `Updating permissions for role ID: ${roleId} to [${permissionIds.join(', ')}]`,
@@ -194,7 +210,8 @@ export class RolesService {
   /**
    * Delete a role by its ID.
    */
-  async deleteRole(id: number): Promise<void> {
+  async deleteRole(storeId: number, id: number): Promise<void> {
+    this.validateStoreAccess(storeId);
     try {
       this.logger.log(`Deleting role with ID: ${id}`);
       const result = await this.roleRepository.delete(id);
