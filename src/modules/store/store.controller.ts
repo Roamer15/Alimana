@@ -35,6 +35,10 @@ export class StoreController {
     @Body() createStoreDto: CreateStoreDto,
     @Res({ passthrough: true }) res: Response,
   ) {
+    this.logger.log(`Creating store with DTO: ${JSON.stringify(createStoreDto)}`);
+
+    console.log('accessToken expiration:', this.configService.jwtAccesTokenExpirationMs);
+
     const { store, accessToken, refreshToken } =
       await this.storeService.createStore(createStoreDto);
 
@@ -53,6 +57,7 @@ export class StoreController {
       maxAge: Number(refreshTokenExpirationMs),
       sameSite: 'strict',
     });
+    console.log('BODY:', createStoreDto);
 
     return { message: 'Store created successfully and session opened.', store };
   }

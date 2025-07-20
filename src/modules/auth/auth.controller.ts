@@ -132,7 +132,7 @@ export class AuthController {
 
     // res.redirect('/dashboard');
     const frontendUrl = this.configService.frontendUrl || 'http://localhost:3001';
-    return res.redirect(`${frontendUrl}/dashboard`);
+    return res.redirect(`${frontendUrl}/auth/callback`);
   }
 
   // --- 2. Authentification ---
