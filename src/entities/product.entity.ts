@@ -47,7 +47,7 @@ export class Product {
   sellingPrice: number;
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
-  costPrice: number;
+  costPrice: number; // Prix d'achat unitaire (pour calcul de marge)
 
   @Column('decimal', { precision: 5, scale: 2, default: 0 })
   discountPercentage: number; // % de remise sur le prix original
