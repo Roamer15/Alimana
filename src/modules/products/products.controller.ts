@@ -19,7 +19,7 @@ import { PermissionKey } from '../store/constants/permission-enum';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @UseGuards(JwtAuthGuard)
-@Controller('store/:storeId/products')
+@Controller('store/:storeId/product')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
