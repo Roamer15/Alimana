@@ -13,6 +13,10 @@ import { ClsModule } from 'nestjs-cls';
 import { RequestContextModule } from './common/context/request-context/request-context.module';
 import { PayloadContextMiddleware } from './common/middleware/payload-context.middleware';
 import { StoreModule } from './modules/store/store.module';
+import { CashRegisterModule } from './modules/cash-register/cash-register.module';
+import { StoreSettingModule } from './modules/store-setting/store-setting.module';
+import { CashRegisterSessionsModule } from './modules/cash-register-sessions/cash-register-sessions.module';
+import { CashMovementModule } from './modules/cash-movement/cash-movement.module';
 // Importez votre middleware de payload
 
 @Module({
@@ -21,6 +25,9 @@ import { StoreModule } from './modules/store/store.module';
     AuthModule,
     AppConfigModule,
     StoreModule,
+    StoreSettingModule,
+    CashRegisterSessionsModule,
+    CashMovementModule,
     // Configuration de ClsModule au niveau racine
     ClsModule.forRoot({
       global: true, // Rend ClsModule globalement disponible
@@ -54,6 +61,7 @@ import { StoreModule } from './modules/store/store.module';
         logging: configService.typeormLogging,
       }),
     }),
+    CashRegisterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

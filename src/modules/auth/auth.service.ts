@@ -1,20 +1,20 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm'; //décorateur de TypeORM pour injecter un dépôt (Repository) d'entité spécifique.
+import { Repository } from 'typeorm'; //fournit des méthodes pour interagir avec la base de données (enregistrer, trouver, supprimer des entités).
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
-import { v4 as uuidv4 } from 'uuid';
-import { Request } from 'express';
-
 import { AppConfigService } from '../../config/config.service';
 import { AuthProvider, User } from '../../entities/User.entity';
 import { UserRefreshToken } from '../../entities/user-refresh-token.entity';
 import { StoreUser, StoreUserStatus } from '../../entities/store-user.entity';
 import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { v4 as uuidv4 } from 'uuid'; //pour générer des identifiants uniques universels (UUID), utilisée ici pour les jetons de rafraîchissement.
 import { ErrorCode } from '../../common/errors/error-codes.enum';
 import { throwHttpError } from '../../common/errors/http-exception.helper';
 import { Profile } from 'passport-google-oauth20';
+import { Request } from 'express';
 import { RequestContextService } from 'src/common/context/request-context/request-context.service';
 import { MyLoggerService } from 'src/my-logger/my-logger.service';
 
@@ -22,30 +22,27 @@ import { MyLoggerService } from 'src/my-logger/my-logger.service';
 export class AuthService {
   constructor(
     @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    private usersRepository: Repository<User>,
     @InjectRepository(UserRefreshToken)
-    private readonly userRefreshTokensRepository: Repository<UserRefreshToken>,
+    private userRefreshTokensRepository: Repository<UserRefreshToken>,
     @InjectRepository(StoreUser)
-    private readonly storeUsersRepository: Repository<StoreUser>,
-    private readonly jwtService: JwtService,
-    private readonly configService: AppConfigService,
+    private storeUsersRepository: Repository<StoreUser>,
+    private jwtService: JwtService,
+    private configService: AppConfigService,
     private readonly requestContextService: RequestContextService,
     private readonly logger: MyLoggerService,
   ) {}
 
+  //  Création de compte
   async registerLocal(registerDto: RegisterDto): Promise<User> {
     const { fullName, email, password, phone } = registerDto;
 
     const existingUser = await this.usersRepository.findOne({ where: { email } });
     if (existingUser) {
-      throwHttpError(ErrorCode.EMAIL_ALREADY_USED, { email });
+      throwHttpError(ErrorCode.EMAIL_ALREADY_USED, { email: email });
     }
 
-    if (!password) {
-      throwHttpError(ErrorCode.VALIDATION_FAILED, { reason: 'Password is required' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password!, 10);
 
     const newUser = this.usersRepository.create({
       fullName,
@@ -55,21 +52,41 @@ export class AuthService {
       canCreateStore: true,
     });
 
-    return await this.usersRepository.save(newUser);
+    await this.usersRepository.save(newUser);
+    return newUser;
   }
 
-  async validateUser(email: string, pass: string): Promise<User> {
+  async validateUser(email: string, pass: string): Promise<User | null> {
     const user = await this.usersRepository.findOne({ where: { email } });
-    if (!user || !user.password) {
-      throwHttpError(ErrorCode.INVALID_CREDENTIALS);
+
+    // Si l'utilisateur n'est pas trouvé, lever une erreur USER_NOT_FOUND
+    // C'est préférable à "EMAIL_ALREADY_USED" qui est pour l'enregistrement.
+    // Pour des raisons de sécurité (prévention de l'énumération d'utilisateurs),
+    // certains préfèrent une erreur générique "Identifiants invalides" pour les deux cas (utilisateur non trouvé ou mot de passe incorrect).
+    if (!user) {
+      throwHttpError(ErrorCode.USER_NOT_FOUND, { email: email });
     }
 
+    // Si l'utilisateur est trouvé mais que le mot de passe est nul/indéfini dans la DB,
+    // cela indique un problème de données ou un utilisateur sans mot de passe,
+    // ce qui devrait empêcher la connexion. On traite cela comme des identifiants invalides.
+    // Normalement, après l'enregistrement, user.password ne devrait pas être null.
+    if (!user.password) {
+      throwHttpError(ErrorCode.INVALID_CREDENTIALS, { reason: 'User has no password set' });
+    }
+
+    // Comparer le mot de passe fourni avec le mot de passe haché de l'utilisateur
     const isPasswordValid = await bcrypt.compare(pass, user.password);
-    if (!isPasswordValid) {
+
+    if (isPasswordValid) {
+      // Exclure le mot de passe de l'objet utilisateur retourné pour des raisons de sécurité
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...result } = user;
+      return result as User;
+    } else {
+      // Si le mot de passe n'est pas valide, lever une erreur INVALID_CREDENTIALS
       throwHttpError(ErrorCode.INVALID_CREDENTIALS);
     }
-
-    return user;
   }
 
   async findOrCreateGoogleUser(profile: Profile): Promise<User> {
@@ -78,180 +95,137 @@ export class AuthService {
     const fullName = profile.displayName;
     const avatarUrl = profile.photos?.[0]?.value;
 
+    //  Validation des données de profil Google entrantes
     if (!email || !googleId || !fullName) {
-      throwHttpError(ErrorCode.VALIDATION_FAILED, { reason: 'Incomplete Google profile' });
+      throwHttpError(ErrorCode.VALIDATION_FAILED, {
+        reason: 'Profil Google incomplet',
+        details: {
+          emailProvided: !!email,
+          googleIdProvided: !!googleId,
+          fullNameProvided: !!fullName,
+        },
+      });
     }
 
+    //  Tenter de trouver l'utilisateur par son ID Google (providerId)
     let user = await this.usersRepository.findOne({
       where: { providerId: googleId, authProvider: AuthProvider.GOOGLE },
     });
 
-    if (user) return user;
+    if (user) {
+      return user;
+    }
 
+    // 3. Si non trouvé par ID Google, tenter de trouver l'utilisateur par son email.
     user = await this.usersRepository.findOne({ where: { email } });
 
     if (user) {
-      if (user.authProvider === AuthProvider.GOOGLE && !user.providerId) {
-        user.providerId = googleId;
-        return this.usersRepository.save(user);
+      // Utilisateur trouvé par email.
+      if (user.authProvider === AuthProvider.GOOGLE) {
+        // L'email est déjà associé à un compte Google, mais peut-être que le providerId n'était pas défini
+        // ou qu'il y a eu un problème lors de la première recherche.
+        // Mettre à jour le providerId si manquant, pour s'assurer que le compte est bien lié.
+        if (!user.providerId) {
+          user.providerId = googleId;
+          await this.usersRepository.save(user);
+        }
+        return user;
+      } else {
+        // L'email existe, mais est lié à un fournisseur d'authentification différent (ex: local, Facebook).
+        // C'est un conflit. L'utilisateur doit se connecter avec sa méthode originale
+        // ou lier explicitement les comptes (logique non implémentée ici pour simplifier).
+        throwHttpError(ErrorCode.EMAIL_ALREADY_USED, {
+          email: email,
+          reason: `Cet email est déjà enregistré avec le fournisseur ${user.authProvider}.`,
+        });
       }
-
-      throwHttpError(ErrorCode.EMAIL_ALREADY_USED, {
-        email,
-        reason: `Email already used with ${user.authProvider}`,
-      });
     }
 
-    const newUser = this.usersRepository.create({
+    //  Si aucun utilisateur n'est trouvé (ni par ID Google, ni par email), créer un nouvel utilisateur.
+    user = this.usersRepository.create({
+      providerId: googleId,
       email,
       fullName,
-      providerId: googleId,
       avatarUrl,
       authProvider: AuthProvider.GOOGLE,
-      canCreateStore: true,
+      canCreateStore: true, // Permission par défaut pour les nouveaux utilisateurs
     });
 
-    return this.usersRepository.save(newUser);
+    await this.usersRepository.save(user);
+    return user;
   }
 
-  async generateTokens(
-    user: User,
-    storeUser?: StoreUser,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _req?: Request,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    const payload: Record<string, unknown> = {
+  //  Authentification & Génération de Tokens
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async generateTokens(user: User, storeUser?: StoreUser, req?: Request) {
+    // Vérification
+    if (storeUser) {
+      if (!storeUser.store || !storeUser.store.id) {
+        // Si elle se déclenche
+        // c'est que les relations ne sont pas chargées en amont.
+        throw new Error(
+          'Store object or Store ID is missing on StoreUser in generateTokens. Relation "store" not loaded.',
+        );
+      }
+      if (!storeUser.role || !storeUser.role.id) {
+        throw new Error(
+          'Role object or Role ID is missing on StoreUser in generateTokens. Relation "role" not loaded.',
+        );
+      }
+      if (!storeUser.role.permissions) {
+        throw new Error(
+          'Permissions array is missing on StoreUser.role in generateTokens. Relation "role.permissions" not loaded.',
+        );
+      }
+    }
+
+    const payload = {
       userId: user.id,
       email: user.email,
       canCreateStore: user.canCreateStore,
+      ...(storeUser && {
+        storeUserId: storeUser.id,
+        storeId: storeUser.storeId,
+        roleId: storeUser.roleId,
+        roleName: storeUser.role.name,
+        permissions: storeUser.role.permissions,
+      }),
     };
 
-    if (storeUser) {
-      const { store, role } = storeUser;
-
-      if (!store?.id || !role?.id || !role.permissions) {
-        throw new Error('Incomplete StoreUser relation');
-      }
-
-      Object.assign(payload, {
-        storeUserId: storeUser.id,
-        storeId: store.id,
-        roleId: role.id,
-        roleName: role.name,
-        permissions: role.permissions,
-      });
-    }
+    this.logger.log(
+      `payload creer pour l'utlisateur authentifier ${JSON.stringify(payload, null)}`,
+      'AuthService',
+    );
 
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: this.configService.jwtAccessTokenExpiration,
     });
 
-    const refreshTokenValue = uuidv4();
-    const hashedToken = this.hashToken(refreshTokenValue);
-    const refreshExpiresAt = new Date();
+    const refreshTokenValue = uuidv4(); // Token brut à retourner au client
+    const refreshTokenHash = this.hashToken(refreshTokenValue);
 
-    refreshExpiresAt.setDate(
-      refreshExpiresAt.getDate() +
+    const refreshExpiresIn = new Date();
+    refreshExpiresIn.setDate(
+      refreshExpiresIn.getDate() +
         parseInt(this.configService.jwtRefrehTokenExpiration?.replace('d', '') || '7', 10),
     );
 
     const newRefreshToken = this.userRefreshTokensRepository.create({
-      tokenHash: hashedToken,
-      expiresAt: refreshExpiresAt,
+      tokenHash: refreshTokenHash,
+      expiresAt: refreshExpiresIn,
       user,
-      ...(storeUser && { storeUser }),
+      ...(storeUser && { storeUser }), // ajout conditionnel propre
     });
 
     await this.userRefreshTokensRepository.save(newRefreshToken);
-
+    this.logger.log(
+      `new newRefreshToken inser on database ${JSON.stringify(newRefreshToken, null)}`,
+      'authservice',
+    );
     return {
       accessToken,
-      refreshToken: refreshTokenValue,
+      refreshToken: refreshTokenValue, // C’est celui-ci qu’on envoie au client
     };
-  }
-
-  async refreshTokens(refreshToken: string, req?: Request) {
-    const hashedToken = this.hashToken(refreshToken);
-
-    const storedToken = await this.userRefreshTokensRepository.findOne({
-      where: { tokenHash: hashedToken, revoked: false },
-      relations: [
-        'user',
-        'storeUser',
-        'storeUser.store',
-        'storeUser.role',
-        'storeUser.role.permissions',
-      ],
-    });
-
-    if (!storedToken || storedToken.expiresAt < new Date()) {
-      if (storedToken?.user) {
-        await this.userRefreshTokensRepository.update(
-          { user: storedToken.user, revoked: false },
-          { revoked: true },
-        );
-      }
-
-      throwHttpError(ErrorCode.REFRESH_TOKEN_INVALID, { reason: 'Expired or invalid token' });
-    }
-
-    storedToken.revoked = true;
-    await this.userRefreshTokensRepository.save(storedToken);
-
-    return this.generateTokens(storedToken.user, storedToken.storeUser, req);
-  }
-
-  async logout(refreshToken: string): Promise<void> {
-    const hashed = this.hashToken(refreshToken);
-    const token = await this.userRefreshTokensRepository.findOne({
-      where: { tokenHash: hashed, revoked: false },
-    });
-
-    if (token) {
-      token.revoked = true;
-      await this.userRefreshTokensRepository.save(token);
-    }
-  }
-
-  async findUserStores(userId: number) {
-    const storeUsers = await this.storeUsersRepository.find({
-      where: { user: { id: userId }, status: StoreUserStatus.ACTIVE },
-      relations: ['store', 'role'],
-    });
-
-    return storeUsers.map((su) => {
-      const store = su.store as {
-        id: number;
-        name: string;
-        logoUrl?: string;
-        profileImageUrl?: string;
-      };
-      return {
-        id: store.id,
-        name: store.name,
-        storeUserId: su.id,
-        roleName: su.role.name,
-        logoUrl: store.logoUrl ?? '',
-        profileImageUrl: store.profileImageUrl ?? '',
-      };
-    });
-  }
-
-  async selectStore(userId: number, storeUserId: number) {
-    const storeUser = await this.storeUsersRepository.findOne({
-      where: { id: storeUserId, user: { id: userId } },
-      relations: ['user', 'store', 'role', 'role.permissions'],
-    });
-
-    if (!storeUser || storeUser.status !== StoreUserStatus.ACTIVE) {
-      throwHttpError(ErrorCode.FORBIDDEN, {
-        reason: 'Invalid or inactive store access.',
-        details: { userId, storeUserId },
-      });
-    }
-
-    await this.usersRepository.update(userId, { lastSelectedStoreUserId: storeUserId });
-    return this.generateTokens(storeUser.user, storeUser);
   }
 
   private hashToken(token: string): string {
@@ -260,5 +234,161 @@ export class AuthService {
 
   private compareTokenHash(plainToken: string, hashedToken: string): boolean {
     return this.hashToken(plainToken) === hashedToken;
+  }
+
+  async login(loginDto: LoginDto) {
+    const user = await this.validateUser(loginDto.email, loginDto.password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return this.generateTokens(user);
+  }
+
+  /**
+   * Récupère toutes les boutiques où l'utilisateur est un StoreUser actif.
+   * @param userId L'ID de l'utilisateur global.
+   * @returns Un tableau d'objets représentant les boutiques et le rôle de l'utilisateur.
+   */
+  async findUserStores(userId: number): Promise<
+    {
+      id: number;
+      name: string;
+      storeUserId: number;
+      roleName: string;
+      profileImageUrl: string;
+      logoUrl: string;
+    }[]
+  > {
+    // Récupérer toutes les entrées StoreUser pour cet utilisateur
+    const storeUsers = await this.storeUsersRepository.find({
+      where: {
+        user: { id: userId },
+        status: StoreUserStatus.ACTIVE,
+      },
+      relations: ['store', 'role'], // Charger les détails de la boutique et du rôle
+    });
+
+    if (!storeUsers || storeUsers.length === 0) {
+      this.logger.warn(
+        `User ID ${userId} is not associated with any active stores.`,
+        'AuthService',
+      );
+      // await this.auditLogsService.createAuditLog({
+      //   storeId: null,
+      //   storeUserId: userId,
+      //   actionType: AuditActionType.VIEW,
+      //   entity: 'StoreUser',
+      //   entityId: String(userId),
+      //   notes: `Utilisateur (ID: ${userId}) a tenté de lister ses boutiques, mais aucune n'a été trouvée.`,
+      //   ipAddress,
+      //   userAgent,
+      // });
+      return [];
+    }
+
+    const storesInfo = storeUsers.map((su) => ({
+      id: su.store.id,
+      name: su.store.name,
+      storeUserId: su.id, // C'est l'ID de la relation StoreUser, essentiel pour selectStore
+      roleName: su.role.name,
+      logoUrl: su.store.logoUrl ?? ``,
+      profileImageUrl: su.store.profileImageUrl ?? ``,
+    }));
+
+    this.logger.log(`User ID ${userId} fetched associated stores.`, 'AuthService');
+    // await this.auditLogsService.createAuditLog({
+    //   storeId: null,
+    //   storeUserId: userId,
+    //   actionType: AuditActionType.VIEW,
+    //   entity: 'Store',
+    //   entityId: String(userId),
+    //   notes: `Utilisateur (ID: ${userId}) a consulté la liste de ses boutiques associées.`,
+    //   ipAddress,
+    //   userAgent,
+    // });
+    return storesInfo;
+  }
+
+  // --- 4. Sélection de boutique ---
+  async selectStore(userId: number, storeUserId: number) {
+    const storeUser = await this.storeUsersRepository.findOne({
+      where: { id: storeUserId, user: { id: userId } },
+      relations: ['user', 'store', 'role', 'role.permissions'],
+    });
+
+    if (!storeUser) {
+      throwHttpError(ErrorCode.INVALID_CREDENTIALS, {
+        reason: "Sélection de boutique invalide ou non associée à l'utilisateur.",
+        details: { userId, storeUserId },
+      });
+    }
+
+    if (storeUser.status !== StoreUserStatus.ACTIVE) {
+      throwHttpError(ErrorCode.FORBIDDEN, {
+        reason: 'Votre accès à la boutique a été désactivé.',
+        details: { storeUserId, status: storeUser.status },
+      });
+    }
+
+    // Mettre à jour l'utilisateur avec le contexte actif de la boutique
+    await this.usersRepository.update(userId, { lastSelectedStoreUserId: storeUserId });
+
+    // Générer de nouveaux tokens incluant les informations de la boutique
+    return this.generateTokens(storeUser.user, storeUser);
+  }
+
+  // --- 6. Refresh Token ---
+  async refreshTokens(refreshToken: string, req?: Request) {
+    // Calculer le hash du refreshToken fourni
+    const hashedToken = this.hashToken(refreshToken);
+
+    // Trouver le token non révoqué avec ce hash
+    const storedToken = await this.userRefreshTokensRepository.findOne({
+      where: { revoked: false, tokenHash: hashedToken },
+      relations: [
+        'user',
+        'storeUser',
+        'storeUser.store',
+        'storeUser.role',
+        'storeUser.role.permissions',
+      ], // Chargement dees relations nécessaires pour la methode genereToken
+    });
+
+    if (!storedToken || storedToken.expiresAt < new Date()) {
+      // Si le token est invalide ou expiré, révoquer tous les tokens non révoqués de cet utilisateur (sécurité)
+      if (storedToken?.user) {
+        await this.userRefreshTokensRepository.update(
+          { user: storedToken.user, revoked: false },
+          { revoked: true },
+        );
+      }
+      throwHttpError(ErrorCode.REFRESH_TOKEN_INVALID, {
+        reason: 'Jeton de rafraîchissement invalide ou expiré.',
+        storedToken,
+      });
+    }
+
+    // Révoquer le token de rafraîchissement utilisé
+    storedToken.revoked = true;
+    await this.userRefreshTokensRepository.save(storedToken);
+
+    const user = storedToken.user;
+    const associatedStoreUser = storedToken.storeUser;
+
+    // Générer de nouveaux tokens avec information de la boutique choisi
+    return this.generateTokens(user, associatedStoreUser, req);
+  }
+
+  async logout(refreshToken: string) {
+    const hashed = this.hashToken(refreshToken);
+
+    const token = await this.userRefreshTokensRepository.findOne({
+      where: { tokenHash: hashed, revoked: false },
+    });
+
+    if (token) {
+      token.revoked = true;
+      await this.userRefreshTokensRepository.save(token);
+    }
   }
 }

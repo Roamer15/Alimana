@@ -33,7 +33,7 @@ interface UserJwtPayload {
 }
 
 // Payload pour le JWT spécifique à la boutique
-interface StoreUserJwtPayload {
+export interface StoreUserJwtPayload {
   userId: number; // userId
   email: string;
   canCreateStore: boolean;
