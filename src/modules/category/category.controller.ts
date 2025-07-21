@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -26,6 +28,7 @@ export class CategoryController {
   @UseGuards(StoreJwtGuard, PermissionsGuard)
   @PermissionKeys(PermissionKey.MANAGE_CATEGORIES)
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   async createCategory(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Body() dto: CreateCategoryDto,

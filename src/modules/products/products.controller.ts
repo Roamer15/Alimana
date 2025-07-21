@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseBoolPipe,
   ParseIntPipe,
@@ -28,6 +30,7 @@ export class ProductsController {
   @UseGuards(StoreJwtGuard, PermissionsGuard)
   @PermissionKeys(PermissionKey.MANAGE_PRODUCTS)
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   async addProduct(@Param('storeId', ParseIntPipe) storeId: number, @Body() dto: CreateProductDto) {
     return this.productsService.addNewProduct(storeId, dto);
   }
