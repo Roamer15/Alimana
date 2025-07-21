@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseBoolPipe,
   ParseIntPipe,
   Patch,
   Post,
@@ -40,7 +41,7 @@ export class ProductsController {
     @Query('limit', ParseIntPipe) limit?: number,
     @Query('search') search?: string,
     @Query('categoryId', ParseIntPipe) categoryId?: number,
-    @Query('isActive') isActive?: boolean,
+    @Query('isActive', ParseBoolPipe) isActive?: boolean,
   ) {
     return this.productsService.listProducts(storeId, {
       page,
