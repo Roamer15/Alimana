@@ -84,7 +84,7 @@ export class StoreUser {
   auditLogs: Promise<AuditLog[]>; // Use Promise with lazy loading
 
   /** Cash register sessions opened or closed by this user */
-  @OneToMany(() => CashRegisterSession, (session) => session.openedById, { lazy: true })
+  @OneToMany(() => CashRegisterSession, (session) => session.openedBy, { lazy: true })
   cashRegisterSessions: Promise<CashRegisterSession[]>; // Use Promise with lazy loading
 
   /** Roles created by this user for their store (if a StoreUser can create roles) */

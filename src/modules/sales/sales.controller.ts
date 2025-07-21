@@ -17,13 +17,14 @@ import { StoreUserJwtPayload } from '../auth/auth.controller';
 import { SalesService } from './sales.service';
 import { PermissionKey } from '../store/constants/permission-enum';
 import { CreateSaleDto } from './dto/sale-dto';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 
 interface StoreJwtAuthRequest extends Request {
   user: StoreUserJwtPayload;
 }
 
 @Controller('stores/:storeId/sales')
-@UseGuards(StoreJwtGuard) // Toutes les routes ici nécessitent un contexte de boutique
+@UseGuards(StoreJwtGuard, PermissionsGuard) // Toutes les routes ici nécessitent un contexte de boutique
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
