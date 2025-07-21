@@ -7,7 +7,7 @@ import { Category } from 'src/entities/category.entity';
 import { Product } from 'src/entities/product.entity';
 import { Store } from 'src/entities/store.entity';
 import { MyLoggerService } from 'src/my-logger/my-logger.service';
-import { Repository, FindOptionsWhere, Not, Like } from 'typeorm';
+import { Repository, FindOptionsWhere, Not, ILike } from 'typeorm';
 import * as crypto from 'crypto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -282,7 +282,7 @@ export class ProductsService {
     if (query.categoryId) where.categoryId = query.categoryId;
     if (query.isActive !== undefined) where.isActive = query.isActive;
     if (query.search) {
-      where.name = Like(`%${query.search}%`);
+      where.name = ILike(`%${query.search}%`);
     }
 
     const [items, total] = await this.productRepo.findAndCount({
@@ -301,9 +301,9 @@ export class ProductsService {
     this.validateStoreAccess(storeId);
     return this.productRepo.find({
       where: [
-        { storeId, name: Like(`%${keyword}%`) },
-        { storeId, brand: Like(`%${keyword}%`) },
-        { storeId, barcode: Like(`%${keyword}%`) },
+        { storeId, name: ILike(`%${keyword}%`) },
+        { storeId, brand: ILike(`%${keyword}%`) },
+        { storeId, barcode: ILike(`%${keyword}%`) },
       ],
       take: 20,
       relations: ['category'],

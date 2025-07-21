@@ -20,6 +20,7 @@ import { StoreSettingModule } from './modules/store-setting/store-setting.module
 import { CashRegisterSessionsModule } from './modules/cash-register-sessions/cash-register-sessions.module';
 import { CashMovementModule } from './modules/cash-movement/cash-movement.module';
 import { ProductsModule } from './modules/products/products.module';
+import { CategoryModule } from './modules/category/category.module';
 // Importez votre middleware de payload
 
 @Module({
@@ -68,6 +69,7 @@ import { ProductsModule } from './modules/products/products.module';
     PermissionsModule,
     CashRegisterModule,
     ProductsModule,
+    CategoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
