@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -14,7 +15,7 @@ import { StoreJwtGuard } from '../auth/guards/store-jwt.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PermissionKey } from '../store/constants/permission-enum';
 import { PermissionKeys } from '../auth/decorators/permissions.decorator';
-import { createCategoryDto } from './dto/create-category.dto';
+import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @UseGuards(JwtAuthGuard)
@@ -25,7 +26,10 @@ export class CategoryController {
   @UseGuards(StoreJwtGuard, PermissionsGuard)
   @PermissionKeys(PermissionKey.MANAGE_CATEGORIES)
   @Post()
-  async createCategory(@Param('storeId', ParseIntPipe) storeId: number, dto: createCategoryDto) {
+  async createCategory(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Body() dto: CreateCategoryDto,
+  ) {
     return this.categoryService.createCategory(storeId, dto);
   }
 
@@ -42,7 +46,7 @@ export class CategoryController {
   async updateCategory(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Param('categoryId', ParseIntPipe) categoryId: number,
-    dto: UpdateCategoryDto,
+    @Body() dto: UpdateCategoryDto,
   ) {
     return this.categoryService.updateCategory(storeId, categoryId, dto);
   }

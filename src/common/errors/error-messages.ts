@@ -181,11 +181,11 @@ export const ErrorMessages: Record<ErrorCode, { message: string; status: HttpSta
     status: HttpStatus.NOT_FOUND,
   },
   [ErrorCode.CATEGORY_ALREADY_EXISTS]: {
-    message: 'Categor already exists',
+    message: 'Category already exists',
     status: HttpStatus.CONFLICT,
   },
   [ErrorCode.CATEGORY_CREATION_FAILED]: {
-    message: 'Category failed to create',
+    message: 'Failed to create category',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
   },
   [ErrorCode.CATEGORY_UPDATE_FAILED]: {

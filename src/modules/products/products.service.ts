@@ -8,7 +8,7 @@ import { Product } from 'src/entities/product.entity';
 import { Store } from 'src/entities/store.entity';
 import { MyLoggerService } from 'src/my-logger/my-logger.service';
 import { Repository, FindOptionsWhere, Not, ILike } from 'typeorm';
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
@@ -193,7 +193,7 @@ export class ProductsService {
 
         // 5. Create + Save
         const product = manager.getRepository(Product).create(productData);
-        this.logger.log(`Product created with ID: ${product.id} in store ${storeId}`, this.ctx);
+        this.logger.log(`Product created in store ${storeId}`, this.ctx);
 
         return await manager.getRepository(Product).save(product);
       } catch (error) {

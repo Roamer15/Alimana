@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -26,7 +27,7 @@ export class ProductsController {
   @UseGuards(StoreJwtGuard, PermissionsGuard)
   @PermissionKeys(PermissionKey.MANAGE_PRODUCTS)
   @Post()
-  async addProduct(@Param('storeId', ParseIntPipe) storeId: number, dto: CreateProductDto) {
+  async addProduct(@Param('storeId', ParseIntPipe) storeId: number, @Body() dto: CreateProductDto) {
     return this.productsService.addNewProduct(storeId, dto);
   }
 
@@ -66,7 +67,7 @@ export class ProductsController {
   async updateProduct(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Param('productId', ParseIntPipe) productId: number,
-    dto: UpdateProductDto,
+    @Body() dto: UpdateProductDto,
   ) {
     return this.productsService.updateProduct(storeId, productId, dto);
   }

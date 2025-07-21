@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
-export class createCategoryDto {
+export class CreateCategoryDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
