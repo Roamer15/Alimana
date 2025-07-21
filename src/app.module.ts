@@ -7,6 +7,8 @@ import { AppConfigService } from './config/config.service';
 import { MyLoggerModule } from './my-logger/my-logger.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+import { RolesModule } from './modules/roles/roles.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
 
 // Importez les modules du contexte
 import { ClsModule } from 'nestjs-cls';
@@ -61,6 +63,8 @@ import { CashMovementModule } from './modules/cash-movement/cash-movement.module
         logging: configService.typeormLogging,
       }),
     }),
+    RolesModule,
+    PermissionsModule,
     CashRegisterModule,
   ],
   controllers: [AppController],
