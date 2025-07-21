@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Sale } from './sale.entity';
 import { PaymentMethod } from './payment-method.entity';
+import { StoreUser } from './store-user.entity';
 
 @Entity('payments')
 export class Payment {
@@ -25,7 +26,7 @@ export class Payment {
   saleId: number;
 
   @ManyToOne(() => PaymentMethod, (paymentMethod) => paymentMethod.payments, {
-    onDelete: 'CASCADE',
+    onDelete: 'RESTRICT',
   })
   @JoinColumn()
   paymentMethod: PaymentMethod;
@@ -39,6 +40,12 @@ export class Payment {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   transactionReference: string;
+
+  @ManyToOne(() => StoreUser, { onDelete: 'RESTRICT' })
+  processedBy: StoreUser; // Qui a enregistré ce paiement
+
+  @Column()
+  processedByStoreUserId: number;
 
   @Column({ type: 'enum', enum: ['pending', 'completed', 'failed'], default: 'completed' })
   status: 'pending' | 'completed' | 'failed';

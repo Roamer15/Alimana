@@ -8,7 +8,6 @@ import {
   UpdateDateColumn,
   Index,
   JoinColumn,
-  OneToOne,
 } from 'typeorm';
 import { Store } from './store.entity';
 import { StoreUser } from './store-user.entity';
@@ -18,12 +17,19 @@ import { CustomerReturn } from './customer-return.entity';
 import { Receipt } from './sale-receipt.entity';
 import { Payment } from './payment.entity';
 
+export enum SaleStatus {
+  COMPLETED = 'completed',
+  PENDING = 'pending',
+  REFUNDED = 'refunded',
+  CANCELED = 'canceled',
+}
+
 @Entity('sales')
 export class Sale {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Store, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Store, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
@@ -31,7 +37,7 @@ export class Sale {
   @Column()
   storeId: number;
 
-  @ManyToOne(() => StoreUser)
+  @ManyToOne(() => StoreUser, { onDelete: 'RESTRICT' })
   @JoinColumn()
   createdBy: StoreUser;
 
@@ -56,17 +62,30 @@ export class Sale {
   @OneToMany(() => CustomerReturn, (ret) => ret.sale)
   returns: CustomerReturn[];
 
-  @OneToOne(() => Receipt, (receipt) => receipt.sale) // Suppression de @JoinColumn() ici
-  receipt: Receipt;
+  @Column({ type: 'varchar', length: 50, unique: true })
+  @Index()
+  saleNumber: string; // Numéro de vente unique (ex: auto-généré S-20240717-0001
 
-  @OneToMany(() => Payment, (payment) => payment.sale)
+  @OneToMany(() => Receipt, (receipt) => receipt.sale, { cascade: true }) // cascade pour créer le reçu avec la vente
+  receipts: Receipt[]; // Une vente peut avoir plusieurs reçus (original, duplicata, etc.)
+
+  @OneToMany(() => Payment, (payment) => payment.sale, { cascade: true, eager: true })
   payments: Payment[];
 
   @Column('decimal', { precision: 10, scale: 2 })
   totalAmount: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  totalPaidAmount: number; // Montant total payé par le client (somme des SalePayment)
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  changeDue: number; // Monnaie à rendre au client
+
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   discount: number;
+
+  @Column({ type: 'enum', enum: SaleStatus, default: SaleStatus.COMPLETED })
+  status: SaleStatus;
 
   @Column({ default: false })
   isRefunded: boolean;
