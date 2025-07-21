@@ -10,7 +10,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { CashRegisterService } from './cash-register.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+//import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateCashRegisterDto } from './dto/create-cash-register.dto';
 import { UpdateCashRegisterDto } from './dto/update-cash-register.dto';
 import { StoreJwtGuard } from '../auth/guards/store-jwt.guard';
@@ -18,7 +18,6 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PermissionKeys } from '../auth/decorators/permissions.decorator';
 import { PermissionKey } from '../store/constants/permission-enum';
 
-@UseGuards(JwtAuthGuard)
 @Controller('store/:storeId/cash-register')
 export class CashRegisterController {
   constructor(private readonly cashRegisterService: CashRegisterService) {}
