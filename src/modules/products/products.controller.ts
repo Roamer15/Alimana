@@ -36,10 +36,10 @@ export class ProductsController {
   @Get()
   async listProducts(
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page', ParseIntPipe) page?: number,
+    @Query('limit', ParseIntPipe) limit?: number,
     @Query('search') search?: string,
-    @Query('categoryId') categoryId?: number,
+    @Query('categoryId', ParseIntPipe) categoryId?: number,
     @Query('isActive') isActive?: boolean,
   ) {
     return this.productsService.listProducts(storeId, {

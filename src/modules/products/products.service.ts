@@ -168,13 +168,12 @@ export class ProductsService {
     // Guard by context (only current store allowed)
     this.validateStoreAccess(storeId);
 
+    // 1. Confirm store exists (use manager so we stay in the txn)
+    await this.assertStoreExists(storeId);
+
     return this.productRepo.manager.transaction(async (manager) => {
       try {
         this.logger.log(`Adding new product to store ID: ${storeId}`, this.ctx);
-
-        // 1. Confirm store exists (use manager so we stay in the txn)
-        await this.assertStoreExists(storeId);
-
         // 2. Validate category (if provided)
         await this.assertCategoryValidity(dto.categoryId, storeId);
 
