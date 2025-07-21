@@ -71,7 +71,7 @@ export class InventoryMovement {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => StoreUser, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => StoreUser, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'created_by_id' })
   createdBy: StoreUser | null;
 
@@ -79,7 +79,7 @@ export class InventoryMovement {
   createdById: number | null;
 
   @Column({ type: 'text', nullable: true })
-  notes: string | null;
+  reason: string | null;
 
   @OneToMany(() => InventoryMovementItem, (item) => item.inventoryMovement, { cascade: true })
   items: InventoryMovementItem[];

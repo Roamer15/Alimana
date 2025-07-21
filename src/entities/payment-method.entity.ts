@@ -12,6 +12,15 @@ import {
 import { Payment } from './payment.entity';
 import { Store } from './store.entity';
 
+export enum PaymentMethodType {
+  CASH = 'cash',
+  MOBILE_MONEY = 'mobile_money',
+  CREDIT_CARD = 'credit_card',
+  BANK_TRANSFER = 'bank_transfer',
+  CHEQUE = 'cheque',
+  OTHER = 'other',
+}
+
 @Entity('payment_methods')
 @Index(['storeId', 'name'], { unique: true })
 export class PaymentMethod {
@@ -29,7 +38,7 @@ export class PaymentMethod {
   displayName: string; // ex: 'Espèces'
 
   @Column({ default: false })
-  isDefault: boolean; // ← Vrai si c’est une méthode par défaut globale
+  isDefault: boolean; // ← Vrai si c’est une méthode par défaut
 
   @ManyToOne(() => Store, (store) => store.paymentMethods, {
     nullable: false,

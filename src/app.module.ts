@@ -21,6 +21,7 @@ import { CashRegisterSessionsModule } from './modules/cash-register-sessions/cas
 import { CashMovementModule } from './modules/cash-movement/cash-movement.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CategoryModule } from './modules/category/category.module';
+import { SalesModule } from './modules/sales/sales.module';
 // Importez votre middleware de payload
 
 @Module({
@@ -32,6 +33,7 @@ import { CategoryModule } from './modules/category/category.module';
     StoreSettingModule,
     CashRegisterSessionsModule,
     CashMovementModule,
+    SalesModule,
     // Configuration de ClsModule au niveau racine
     ClsModule.forRoot({
       global: true, // Rend ClsModule globalement disponible
