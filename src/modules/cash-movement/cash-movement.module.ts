@@ -8,11 +8,13 @@ import { CashRegisterSession } from 'src/entities/cash-register-session.entity';
 
 import { StoreUser } from 'src/entities/store-user.entity';
 import { MyLoggerModule } from 'src/my-logger/my-logger.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([CashMovement, CashRegisterSession, StoreUser]),
     MyLoggerModule,
+    AuthModule,
     RequestContextModule,
   ],
   providers: [CashMovementService],

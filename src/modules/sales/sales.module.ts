@@ -13,6 +13,7 @@ import { Sale } from 'src/entities/sale.entity';
 import { StoreUser } from 'src/entities/store-user.entity';
 import { MyLoggerModule } from 'src/my-logger/my-logger.module';
 import { Payment } from 'src/entities/payment.entity';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { Payment } from 'src/entities/payment.entity';
       CashRegisterSession,
       StoreUser,
     ]),
+    AuthModule,
     MyLoggerModule,
     RequestContextModule,
   ],
