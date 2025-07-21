@@ -180,4 +180,24 @@ export const ErrorMessages: Record<ErrorCode, { message: string; status: HttpSta
     message: 'Category not found',
     status: HttpStatus.NOT_FOUND,
   },
+  [ErrorCode.CATEGORY_ALREADY_EXISTS]: {
+    message: 'Categor already exists',
+    status: HttpStatus.CONFLICT,
+  },
+  [ErrorCode.CATEGORY_CREATION_FAILED]: {
+    message: 'Category failed to create',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.CATEGORY_UPDATE_FAILED]: {
+    message: 'Failed to update category',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.CATEGORY_HAS_PRODUCTS]: {
+    message: 'This category has products linked to it',
+    status: HttpStatus.CONFLICT,
+  },
+  [ErrorCode.CATEGORY_DELETE_FAILED]: {
+    message: 'Failed to delete category',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
 };
