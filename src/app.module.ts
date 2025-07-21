@@ -19,6 +19,8 @@ import { CashRegisterModule } from './modules/cash-register/cash-register.module
 import { StoreSettingModule } from './modules/store-setting/store-setting.module';
 import { CashRegisterSessionsModule } from './modules/cash-register-sessions/cash-register-sessions.module';
 import { CashMovementModule } from './modules/cash-movement/cash-movement.module';
+import { ProductsModule } from './modules/products/products.module';
+import { CategoryModule } from './modules/category/category.module';
 import { SalesModule } from './modules/sales/sales.module';
 // Importez votre middleware de payload
 
@@ -68,6 +70,8 @@ import { SalesModule } from './modules/sales/sales.module';
     RolesModule,
     PermissionsModule,
     CashRegisterModule,
+    ProductsModule,
+    CategoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

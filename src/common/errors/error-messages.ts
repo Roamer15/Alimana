@@ -156,4 +156,48 @@ export const ErrorMessages: Record<ErrorCode, { message: string; status: HttpSta
     message: 'les informations du context sont abscend',
     status: HttpStatus.NOT_FOUND,
   },
+  [ErrorCode.PRODUCT_BARCODE_EXISTS]: {
+    message: 'This barcode already exists',
+    status: HttpStatus.CONFLICT,
+  },
+  [ErrorCode.PRODUCT_CREATION_FAILED]: {
+    message: 'Adding of product unsuccessful',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.PRODUCT_FETCH_FAILED]: {
+    message: 'Failed to fetch product',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.PRODUCT_DELETE_FAILED]: {
+    message: 'Failed to delete product',
+    status: HttpStatus.CONFLICT,
+  },
+  [ErrorCode.PRODUCT_UPDATE_FAILED]: {
+    message: 'Failed to update product',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.CATEGORY_NOT_FOUND]: {
+    message: 'Category not found',
+    status: HttpStatus.NOT_FOUND,
+  },
+  [ErrorCode.CATEGORY_ALREADY_EXISTS]: {
+    message: 'Category already exists',
+    status: HttpStatus.CONFLICT,
+  },
+  [ErrorCode.CATEGORY_CREATION_FAILED]: {
+    message: 'Failed to create category',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.CATEGORY_UPDATE_FAILED]: {
+    message: 'Failed to update category',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
+  [ErrorCode.CATEGORY_HAS_PRODUCTS]: {
+    message: 'This category has products linked to it',
+    status: HttpStatus.CONFLICT,
+  },
+  [ErrorCode.CATEGORY_DELETE_FAILED]: {
+    message: 'Failed to delete category',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+  },
 };
