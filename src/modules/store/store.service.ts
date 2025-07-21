@@ -19,14 +19,9 @@ import { getDefaultStoreSettings } from './constants/store-default-settings';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { AuthService } from '../auth/auth.service';
 import { RequestContextService } from 'src/common/context/request-context/request-context.service';
+import { UpdateStoreDto } from './dto/update-store.dto';
 
 // DTO pour la mise à jour de boutique
-export class UpdateStoreDto {
-  name?: string;
-  description?: string;
-  address?: string;
-  phone?: string;
-}
 
 @Injectable()
 export class StoreService {

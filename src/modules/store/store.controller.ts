@@ -9,10 +9,11 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { StoreService, UpdateStoreDto } from './store.service';
+import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { StoreJwtGuard } from '../auth/guards/store-jwt.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -22,6 +23,8 @@ import { MyLoggerService } from 'src/my-logger/my-logger.service';
 import { PermissionKeys } from '../auth/decorators/permissions.decorator'; // Utilisé pour les permissions
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PermissionKey } from './constants/permission-enum';
+import { StoreJwtAuthRequest } from '../auth/auth.controller';
+import { UpdateStoreDto } from './dto/update-store.dto';
 @Controller('store')
 export class StoreController {
   constructor(
@@ -84,6 +87,14 @@ export class StoreController {
   @PermissionKeys(PermissionKey.MANAGE_STORE_SETTINGS)
   async updateStore(@Param('id', ParseIntPipe) id: number, @Body() updateStoreDto: UpdateStoreDto) {
     return this.storeService.updateStore(id, updateStoreDto);
+  }
+
+  @Get()
+  @UseGuards(StoreJwtGuard)
+  @UseGuards(StoreJwtGuard, PermissionsGuard)
+  @PermissionKeys(PermissionKey.MANAGE_STORE_SETTINGS)
+  getStoreDashboard(@Req() req: StoreJwtAuthRequest) {
+    return req.user; // Contient { userId, storeUserId, storeId, roleId, roleName, permissions }
   }
 
   /**

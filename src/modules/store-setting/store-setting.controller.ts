@@ -15,7 +15,7 @@ export class StoreSettingController {
   constructor(private readonly storeSettingService: StoreSettingService) {}
 
   @Get()
-  @UseGuards(StoreJwtGuard, PermissionsGuard)
+  @UseGuards(StoreJwtGuard)
   @PermissionKeys(PermissionKey.MANAGE_STORE_SETTINGS)
   async findAllSettings(@Param('storeId', ParseIntPipe) storeId: number) {
     return this.storeSettingService.findAllSettings(storeId);

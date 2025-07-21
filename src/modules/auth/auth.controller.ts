@@ -57,7 +57,7 @@ interface JwtAuthRequest extends ExpressRequest {
   user: UserJwtPayload; // Après JwtAuthGuard, req.user est le payload du token global
 }
 
-interface StoreJwtAuthRequest extends ExpressRequest {
+export interface StoreJwtAuthRequest extends ExpressRequest {
   user: StoreUserJwtPayload; // Après StoreJwtGuard, req.user est le payload du token de boutique
 }
 
