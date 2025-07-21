@@ -65,5 +65,5 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsInt()
-  categoryId?: number;
+  categoryId: number;
 }

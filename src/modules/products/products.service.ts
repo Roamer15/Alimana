@@ -7,13 +7,15 @@ import { Category } from 'src/entities/category.entity';
 import { Product } from 'src/entities/product.entity';
 import { Store } from 'src/entities/store.entity';
 import { MyLoggerService } from 'src/my-logger/my-logger.service';
-import { Repository, FindOptionsWhere, Not } from 'typeorm';
+import { Repository, FindOptionsWhere, Not, Like } from 'typeorm';
 import * as crypto from 'crypto';
-// import { CreateProductDto } from './dto/create-product.dto';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
   private readonly ctx = ProductsService.name;
+
   constructor(
     @InjectRepository(Product)
     private productRepo: Repository<Product>,
@@ -52,8 +54,8 @@ export class ProductsService {
   private async assertCategoryValidity(
     categoryId: number,
     storeId: number,
-  ): Promise<Category | null> {
-    if (!categoryId) return null;
+  ): Promise<Category | null | undefined> {
+    if (!categoryId) return;
 
     const category = await this.categoryRepo.findOne({ where: { id: categoryId, storeId } });
     if (!category) {
@@ -162,13 +164,149 @@ export class ProductsService {
     return String(checkDigit);
   }
 
-  // async addNewProduct(storeId: number, dto: CreateProductDto): Promise<Product> {
-  //   this.validateStoreAccess(storeId);
-  //   return this.productRepo.manager.transaction(async (manager) => {
-  //     try {
-  //       this.logger.log(`Adding new product to store ID: ${storeId}`);
-  //       const store
-  //     } catch (error) {}
-  //   });
-  // }
+  async addNewProduct(storeId: number, dto: CreateProductDto): Promise<Product> {
+    // Guard by context (only current store allowed)
+    this.validateStoreAccess(storeId);
+
+    return this.productRepo.manager.transaction(async (manager) => {
+      try {
+        this.logger.log(`Adding new product to store ID: ${storeId}`, this.ctx);
+
+        // 1. Confirm store exists (use manager so we stay in the txn)
+        await this.assertStoreExists(storeId);
+
+        // 2. Validate category (if provided)
+        await this.assertCategoryValidity(dto.categoryId, storeId);
+
+        // 3. Resolve or generate barcode
+        const finalBarcode = await this.resolveBarcode(dto.barcode, storeId);
+
+        // 4. Build entity payload (avoid assigning null to non-nullable relation type)
+        const productData: Partial<Product> = {
+          ...dto,
+          barcode: finalBarcode,
+          categoryId: dto.categoryId,
+          createdById: this.requestContextService.getContext().storeUserId ?? undefined,
+          storeId,
+          // category relation handled next
+        };
+
+        // 5. Create + Save
+        const product = manager.getRepository(Product).create(productData);
+        this.logger.log(`Product created with ID: ${product.id} in store ${storeId}`, this.ctx);
+
+        return await manager.getRepository(Product).save(product);
+      } catch (error) {
+        if (error instanceof Error) {
+          this.logger.error(
+            `Error creating product in store ${storeId}`,
+            error.stack || error.message,
+            this.ctx,
+          );
+          throwHttpError(ErrorCode.PRODUCT_CREATION_FAILED, { storeId, error: error.message });
+        }
+        throwHttpError(ErrorCode.PRODUCT_CREATION_FAILED, { storeId, error: String(error) });
+      }
+    });
+  }
+
+  /** Update product */
+  async updateProduct(storeId: number, productId: number, dto: UpdateProductDto): Promise<Product> {
+    this.validateStoreAccess(storeId);
+    return this.productRepo.manager.transaction(async (manager) => {
+      try {
+        this.logger.log(`Updating product ID: ${productId} in store ${storeId}`, this.ctx);
+        const product = await manager
+          .getRepository(Product)
+          .findOne({ where: { id: productId, storeId } });
+        if (!product) throwHttpError(ErrorCode.PRODUCT_NOT_FOUND, { productId, storeId });
+
+        if (dto.categoryId !== undefined) {
+          await this.assertCategoryValidity(dto.categoryId, storeId);
+        }
+
+        const finalBarcode = await this.resolveBarcode(
+          dto.barcode ?? product.barcode,
+          storeId,
+          productId,
+        );
+
+        const updated = { ...product, ...dto, barcode: finalBarcode };
+        return await manager.getRepository(Product).save(updated);
+      } catch (error) {
+        if (error instanceof Error) {
+          this.logger.error(`Error updating product ${productId}`, error.stack, this.ctx);
+
+          throwHttpError(ErrorCode.PRODUCT_UPDATE_FAILED, { error: error.message });
+        }
+        throwHttpError(ErrorCode.PRODUCT_UPDATE_FAILED, { error: String(error) });
+      }
+    });
+  }
+
+  /** Delete product */
+  async deleteProduct(storeId: number, productId: number): Promise<void> {
+    this.validateStoreAccess(storeId);
+    try {
+      const result = await this.productRepo.delete({ id: productId, storeId });
+      if (result.affected === 0)
+        throwHttpError(ErrorCode.PRODUCT_NOT_FOUND, { productId, storeId });
+      this.logger.log(`Deleted product ${productId} from store ${storeId}`, this.ctx);
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Error deleting product ${productId}`, error.stack, this.ctx);
+        throwHttpError(ErrorCode.PRODUCT_DELETE_FAILED, { error: error.message });
+      }
+      throwHttpError(ErrorCode.PRODUCT_DELETE_FAILED, { error: String(error) });
+    }
+  }
+
+  /** List Products with Pagination & Category Filter */
+  async listProducts(
+    storeId: number,
+    query: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      categoryId?: number;
+      isActive?: boolean;
+    },
+  ) {
+    this.validateStoreAccess(storeId);
+
+    const page = query.page && query.page > 0 ? query.page : 1;
+    const limit = query.limit && query.limit > 0 ? query.limit : 20;
+    const skip = (page - 1) * limit;
+
+    const where: FindOptionsWhere<Product> = { storeId };
+    if (query.categoryId) where.categoryId = query.categoryId;
+    if (query.isActive !== undefined) where.isActive = query.isActive;
+    if (query.search) {
+      where.name = Like(`%${query.search}%`);
+    }
+
+    const [items, total] = await this.productRepo.findAndCount({
+      where,
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+      relations: ['category'],
+    });
+
+    return { page, limit, total, items };
+  }
+
+  /** Search Products */
+  async searchProducts(storeId: number, keyword: string): Promise<Product[]> {
+    this.validateStoreAccess(storeId);
+    return this.productRepo.find({
+      where: [
+        { storeId, name: Like(`%${keyword}%`) },
+        { storeId, brand: Like(`%${keyword}%`) },
+        { storeId, barcode: Like(`%${keyword}%`) },
+      ],
+      take: 20,
+      relations: ['category'],
+    });
+  }
 }
