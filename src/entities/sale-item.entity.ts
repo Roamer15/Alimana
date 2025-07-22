@@ -15,7 +15,7 @@ export class SaleItem {
   @Column()
   saleId: number;
 
-  @ManyToOne(() => Product, { eager: true })
+  @ManyToOne(() => Product, (product) => product.saleItems, { onDelete: 'RESTRICT', eager: true })
   @JoinColumn()
   product: Product;
 

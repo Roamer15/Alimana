@@ -19,6 +19,10 @@ import { CashRegisterModule } from './modules/cash-register/cash-register.module
 import { StoreSettingModule } from './modules/store-setting/store-setting.module';
 import { CashRegisterSessionsModule } from './modules/cash-register-sessions/cash-register-sessions.module';
 import { CashMovementModule } from './modules/cash-movement/cash-movement.module';
+import { ProductsModule } from './modules/products/products.module';
+import { CategoryModule } from './modules/category/category.module';
+import { SalesModule } from './modules/sales/sales.module';
+import { InvitationModule } from './modules/invitation/invitation.module';
 // Importez votre middleware de payload
 
 @Module({
@@ -30,6 +34,8 @@ import { CashMovementModule } from './modules/cash-movement/cash-movement.module
     StoreSettingModule,
     CashRegisterSessionsModule,
     CashMovementModule,
+    SalesModule,
+    InvitationModule,
     // Configuration de ClsModule au niveau racine
     ClsModule.forRoot({
       global: true, // Rend ClsModule globalement disponible
@@ -66,6 +72,8 @@ import { CashMovementModule } from './modules/cash-movement/cash-movement.module
     RolesModule,
     PermissionsModule,
     CashRegisterModule,
+    ProductsModule,
+    CategoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

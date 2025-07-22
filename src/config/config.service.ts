@@ -54,6 +54,10 @@ export class AppConfigService {
     return this.config.get<string>('JWT_REFRESH_TOKEN_EXPIRATION_MS');
   }
 
+  get frontendUrl(): string | undefined {
+    return this.config.get<string>('FRONTEND_URL');
+  }
+
   // GOOGLE AUTHENTIFICATION
 
   get googleClientID(): string | undefined {
@@ -68,8 +72,12 @@ export class AppConfigService {
     return this.config.get<string>('GOOGLE_CALLBACK_URL');
   }
 
-  get frontendUrl(): string | undefined {
-    return this.config.get<string>('FRONTEND_URL');
+  get resendApiKey(): string | undefined {
+    return this.config.get<string>('RESEND_API_KEY');
+  }
+
+  get resendSenderEmail(): string | undefined {
+    return this.config.get<string>('RESEND_SENDER_EMAIL');
   }
 
   // 📧 Mailing
