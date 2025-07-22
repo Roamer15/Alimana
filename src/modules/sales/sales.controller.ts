@@ -23,7 +23,7 @@ interface StoreJwtAuthRequest extends Request {
   user: StoreUserJwtPayload;
 }
 
-@Controller('stores/:storeId/sales')
+@Controller('store/:storeId/sales')
 @UseGuards(StoreJwtGuard, PermissionsGuard) // Toutes les routes ici nécessitent un contexte de boutique
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}

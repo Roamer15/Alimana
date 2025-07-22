@@ -21,6 +21,8 @@ import { Sale, SaleStatus } from 'src/entities/sale.entity';
 import { StoreUser, StoreUserStatus } from 'src/entities/store-user.entity';
 import { Repository, DataSource, Between } from 'typeorm';
 import { CreateSaleDto } from './dto/sale-dto';
+import { plainToInstance } from 'class-transformer';
+import { SaleDto } from './dto/saleReturnDto';
 
 @Injectable()
 export class SalesService {
@@ -60,7 +62,7 @@ export class SalesService {
   async createSale(
     createSaleDto: CreateSaleDto,
     urlStoreId: number,
-  ): Promise<{ sale: Sale; receiptContent: string }> {
+  ): Promise<{ sale: SaleDto; receiptContent: string }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -77,7 +79,7 @@ export class SalesService {
       // 1. Vérifications Préalables
       const storeUser = await queryRunner.manager.findOne(StoreUser, {
         where: { id: createdByStoreUserId, storeId: storeId, status: StoreUserStatus.ACTIVE },
-        relations: ['user'],
+        relations: ['user', 'store'],
       });
       if (!storeUser) {
         throw new NotFoundException(
@@ -247,9 +249,18 @@ export class SalesService {
       await queryRunner.manager.save(Receipt, newReceipt);
 
       await queryRunner.commitTransaction();
+      // Supposons que `savedSale` est ton entité complète TypeORM
+      const saleResponse = plainToInstance(SaleDto, savedSale, {
+        excludeExtraneousValues: true,
+      });
+
+      return {
+        sale: saleResponse,
+        receiptContent: receiptContent,
+      };
 
       // Retourner la vente et le contenu du reçu pour l'impression
-      return { sale: savedSale, receiptContent: receiptContent };
+      // return { sale: savedSale, receiptContent: receiptContent };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       console.error('Erreur lors de la création de la vente:', error);
@@ -301,7 +312,7 @@ export class SalesService {
   ): string {
     let content = `
     --- RECU DE VENTE ---
-    Magasin: ${sale.store.name}
+    Magasin: ${storeUser.store.name}
     Caisse: ${cashSession.cashRegister.name} (Session ID: ${cashSession.id})
     Vendeur: ${storeUser.user.fullName}
     Date: ${sale.createdAt.toLocaleString()}
@@ -311,33 +322,37 @@ export class SalesService {
     `;
 
     sale.saleItems.forEach((item) => {
+      const unitPrice = Number(item.unitPrice);
+      const totalPrice = Number(item.totalPrice);
+      const discount = Number(item.discountPercentage);
+
       content += `
-      - ${item.productName} (x${item.quantity}) @ ${item.unitPrice.toFixed(2)} = ${item.totalPrice.toFixed(2)}
-      `;
-      if (item.discountPercentage > 0) {
-        content += `  (Remise article: -${item.discountPercentage.toFixed(2)})`;
+  - ${item.productName} (x${item.quantity}) @ ${unitPrice.toFixed(2)} = ${totalPrice.toFixed(2)}
+  `;
+      if (discount > 0) {
+        content += `  (Remise article: -${discount.toFixed(2)})`;
       }
     });
 
     content += `
     --------------------
-    Montant Total: ${sale.totalAmount.toFixed(2)}
-    Remise Globale: -${sale.discount.toFixed(2)}
-    Montant Net à Payer: ${(sale.totalAmount - sale.discount).toFixed(2)}
+    Montant Total: ${Number(Number(sale.totalAmount) + Number(sale.discount)).toFixed(2)}
+    Remise Globale: -${Number(sale.discount).toFixed(2)}
+    Montant Net à Payer: ${Number(Number(sale.totalAmount))}
     --------------------
     Paiements:
     `;
 
     sale.payments.forEach((payment) => {
       content += `
-      - ${payment.paymentMethod.name}: ${payment.amount.toFixed(2)} ${payment.transactionReference ? `(Ref: ${payment.transactionReference})` : ''}
+      - ${payment.paymentMethod.name}: ${Number(payment.amount).toFixed(2)} ${payment.transactionReference ? `(Ref: ${payment.transactionReference})` : ''}
       `;
     });
 
     content += `
     --------------------
-    Montant Payé: ${sale.totalPaidAmount.toFixed(2)}
-    Monnaie à rendre: ${changeDue.toFixed(2)}
+    Montant Payé: ${Number(sale.totalPaidAmount).toFixed(2)}
+    Monnaie à rendre: ${Number(changeDue).toFixed(2)}
     --------------------
     Merci de votre visite!
     `;

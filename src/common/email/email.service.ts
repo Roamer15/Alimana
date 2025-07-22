@@ -101,10 +101,11 @@ export class EmailService {
   ): Promise<void> {
     const subject = `Invitation à rejoindre la boutique ${storeName} sur Alimana`;
     const senderEmail = this.configService.resendSenderEmail; // L'adresse e-mail de l'expéditeur configurée dans Resend
+    console.log('Email destinataire :', to); // doit afficher une adresse email
 
     if (!senderEmail) {
       this.logger.error(
-        "SENDGRID_SENDER_EMAIL n'est pas défini dans la configuration.",
+        "resend EMAIL n'est pas défini dans la configuration.",
 
         'EmailService',
       );
@@ -136,6 +137,10 @@ export class EmailService {
 
       if (error) {
         const err = error as Error;
+        this.logger.error(
+          `Erreur Resend lors de l'envoi de l'email à ${to}: ${JSON.stringify(error, null, 2)}`,
+          'EmailService',
+        );
         this.logger.error(
           `Erreur Resend lors de l'envoi de l'email à ${to}: ${error.message}`,
           err.stack,

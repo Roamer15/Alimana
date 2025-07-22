@@ -99,6 +99,7 @@ export class CashRegisterSessionsService {
 
       // 3. Créer la nouvelle session
       const newSession = queryRunner.manager.create(CashRegisterSession, {
+        storeId: contextStoreId,
         cashRegister: cashRegister,
         cashRegisterId: cashRegister.id,
         openedBy: openedBy,
