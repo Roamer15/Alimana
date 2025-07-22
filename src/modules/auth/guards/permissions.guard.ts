@@ -23,8 +23,6 @@ export class PermissionsGuard implements CanActivate {
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { user } = context.switchToHttp().getRequest();
-    console.log(`utlisateur qui authrntifier dans la boutique ${JSON.stringify(user, null)}`);
-
     // Le guard de permission est utilisé avec StoreJwtGuard, donc user est StoreUserJwtPayload
     const storeUser = user as StoreUserJwtPayload;
 
