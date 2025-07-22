@@ -38,7 +38,7 @@ export class InvitationController {
    * Crée et envoie une invitation à un utilisateur pour rejoindre une boutique.
    * Accessible par un StoreUser avec la permission 'invite_users'.
    */
-  @Post('stores/:storeId/invitations')
+  @Post('store/:storeId/invitations')
   @PermissionKeys(PermissionKey.INVITE_USERS)
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(StoreJwtGuard, PermissionsGuard)

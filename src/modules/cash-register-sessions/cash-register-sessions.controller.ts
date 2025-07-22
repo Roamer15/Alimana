@@ -11,16 +11,16 @@ import {
   Get,
 } from '@nestjs/common';
 import { CashRegisterSessionsService } from './cash-register-sessions.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PermissionKeys } from '../auth/decorators/permissions.decorator';
 import { PermissionKey } from '../store/constants/permission-enum';
 import { CashRegisterSession } from 'src/entities/cash-register-session.entity';
 import { OpenSessionDto } from './dto/open-session.dto';
 import { CloseSessionDto } from './dto/close-session.dto';
+import { StoreJwtGuard } from '../auth/guards/store-jwt.guard';
 
 @Controller('store/:storeId/cash-register-sessions')
-@UseGuards(JwtAuthGuard, PermissionsGuard) // Appliquer les guards sur tout le contrôleur
+@UseGuards(StoreJwtGuard, PermissionsGuard) // Appliquer les guards sur tout le contrôleur
 export class CashRegisterSessionsController {
   constructor(private readonly cashRegisterSessionsService: CashRegisterSessionsService) {}
 
