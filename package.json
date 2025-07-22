@@ -24,8 +24,8 @@
     "typeorm": "typeorm-ts-node-commonjs -d ./src/database/data-source.ts",
     "migration:create": "npm run typeorm migration:create",
     "migration:generate": "npm run typeorm migration:generate",
-    "migration:run": "npm run typeorm migration:run",
-    "migration:revert": "npm run typeorm migration:revert"
+    "migration:run": "typeorm-ts-node-commonjs -d ./dist/database/data-source.js migration:run",
+    "migration:revert": "typeorm-ts-node-commonjs -d ./dist/database/data-source.js migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.3",
