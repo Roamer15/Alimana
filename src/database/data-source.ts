@@ -1,3 +1,4 @@
+// src/database/data-source.ts
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
@@ -35,8 +36,8 @@ if (validated.error) {
 
 const env: EnvVars = validated.value; // Explicit typing, no more `any`
 
-// Normal
-const isTsEnv = __filename.endsWith('.ts');
+// Utilisation de process.env.NODE_ENV pour distinguer dev/prod
+const isProduction = process.env.NODE_ENV === 'production';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -45,9 +46,13 @@ export const AppDataSource = new DataSource({
   username: env.DB_USERNAME,
   password: env.DB_PASSWORD,
   database: env.DB_NAME,
-  entities: ['src/entities/**/*.entity.ts'],
-  migrations: [isTsEnv ? 'src/database/migrations/**/*.ts' : 'dist/database/migrations/**/*.js'],
+  // En production, les entités et migrations sont dans le dossier 'dist'
+  entities: [isProduction ? 'dist/**/*.entity.js' : 'src/**/*.entity.ts'],
+  migrations: [
+    isProduction ? 'dist/database/migrations/**/*.js' : 'src/database/migrations/**/*.ts',
+  ],
   namingStrategy: new SnakeNamingStrategy(),
   synchronize: false,
   logging: env.TYPEORM_LOGGING,
+  migrationsTableName: 'typeorm_migrations', // Nom de la table qui suivra les migrations appliquées
 });

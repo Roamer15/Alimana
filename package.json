@@ -12,7 +12,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "npm run typeorm migration:run && node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -21,11 +21,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prepare": "husky",
     "type-check": "tsc --noEmit",
-    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
-    "migration:create": "npm run typeorm migration:create -- -d src/database/data-source.ts src/database/migrations",
-    "migration:generate": "npm run typeorm migration:generate -- -d src/database/data-source.ts",
-    "migration:run": "npm run typeorm migration:run -- -d src/database/data-source.ts",
-    "migration:revert": "npm run typeorm migration:revert -- -d src/database/data-source.ts"
+    "typeorm": "typeorm-ts-node-commonjs -d ./src/database/data-source.ts",
+    "migration:create": "npm run typeorm migration:create",
+    "migration:generate": "npm run typeorm migration:generate",
+    "migration:run": "npm run typeorm migration:run",
+    "migration:revert": "npm run typeorm migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.3",
