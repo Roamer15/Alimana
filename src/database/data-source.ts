@@ -13,12 +13,6 @@ export const AppDataSource = new DataSource({
   type: 'postgres',
   url: databaseUrl,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  extra: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
-  },
   entities: [isCompiled ? 'dist/entities/**/*.entity.js' : 'src/entities/**/*.entity.ts'],
   migrations: [isCompiled ? 'dist/database/migrations/**/*.js' : 'src/database/migrations/**/*.ts'],
   namingStrategy: new SnakeNamingStrategy(),
