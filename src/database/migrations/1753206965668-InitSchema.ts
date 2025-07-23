@@ -4,9 +4,14 @@ export class InitSchema1753206965668 implements MigrationInterface {
   name = 'InitSchema1753206965668';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `CREATE TYPE "public"."invitations_status_enum" AS ENUM('pending', 'accepted', 'expired', 'cancelled')`,
-    );
+    await queryRunner.query(`
+  DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'invitations_status_enum') THEN
+      CREATE TYPE "public"."invitations_status_enum" AS ENUM('pending', 'accepted', 'expired', 'cancelled');
+    END IF;
+  END $$;
+`);
+
     await queryRunner.query(
       `CREATE TABLE "invitations" ("id" SERIAL NOT NULL, "email" character varying NOT NULL, "token" character varying NOT NULL, "status" "public"."invitations_status_enum" NOT NULL DEFAULT 'pending', "expires_at" TIMESTAMP NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "accepted_at" TIMESTAMP, "store_id" integer NOT NULL, "role_id" integer NOT NULL, "invited_by_id" integer NOT NULL, CONSTRAINT "UQ_e577dcf9bb6d084373ed3998509" UNIQUE ("token"), CONSTRAINT "PK_5dec98cfdfd562e4ad3648bbb07" PRIMARY KEY ("id"))`,
     );
