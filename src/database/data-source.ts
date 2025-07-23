@@ -12,7 +12,12 @@ const databaseUrl = process.env.DATABASE_URL;
 export const AppDataSource = new DataSource({
   type: 'postgres',
   url: databaseUrl,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: true, // Add this line
+  extra: {
+    ssl: {
+      rejectUnauthorized: false, // For self-signed certificates
+    },
+  },
   entities: [isCompiled ? 'dist/entities/**/*.entity.js' : 'src/entities/**/*.entity.ts'],
   migrations: [isCompiled ? 'dist/database/migrations/**/*.js' : 'src/database/migrations/**/*.ts'],
   namingStrategy: new SnakeNamingStrategy(),
