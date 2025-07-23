@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { MyLoggerService } from './my-logger/my-logger.service';
 import { ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
-import cookieParser from 'cookie-parser';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const logger = new MyLoggerService();
