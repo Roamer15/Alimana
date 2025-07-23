@@ -12,11 +12,9 @@ const databaseUrl = process.env.DATABASE_URL;
 export const AppDataSource = new DataSource({
   type: 'postgres',
   url: databaseUrl,
-  ssl: true, // Add this line
+  ssl: process.env.NODE_ENV === 'production', // Only enable in prod
   extra: {
-    ssl: {
-      rejectUnauthorized: false, // For self-signed certificates
-    },
+    sslmode: 'require', // Explicit mode
   },
   entities: [isCompiled ? 'dist/entities/**/*.entity.js' : 'src/entities/**/*.entity.ts'],
   migrations: [isCompiled ? 'dist/database/migrations/**/*.js' : 'src/database/migrations/**/*.ts'],
