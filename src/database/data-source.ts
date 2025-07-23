@@ -8,7 +8,7 @@ dotenv.config();
 const isCompiled = __filename.endsWith('.js'); // détecte prod ou dev
 
 const databaseUrl =
-  process.env.DATABASE_URL || 'postgres://postgres:connexion45@localhost:5432/alimanadbtest';
+  process.env.DATABASE_URL || 'postgres://ian:557Py2mjs8.@localhost:5432/alimanadbtest';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
