@@ -6,7 +6,7 @@ dotenv.config();
 const isTsEnv = __filename.endsWith('.ts');
 // Fallback to DATABASE_URL if provided
 const databaseUrl =
-  process.env.DATABASE_URL || 'postgres://postgres:557Py2mjs8.@localhost:5432/alimanadb';
+  process.env.DATABASE_URL || 'postgres://ian:557Py2mjs8.@localhost:5432/alimanadb';
 export const AppDataSource = new DataSource({
   type: 'postgres',
   url: databaseUrl,

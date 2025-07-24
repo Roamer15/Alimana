@@ -9,16 +9,16 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { CashMovementService } from './cash-movement.service';
 import { PermissionKey } from '../store/constants/permission-enum';
 import { CashMovement } from 'src/entities/cash-movement.entity';
 import { PermissionKeys } from '../auth/decorators/permissions.decorator';
 import { CreateCashMovementDto } from './dto/create-cash-movement.dto';
+import { StoreJwtGuard } from '../auth/guards/store-jwt.guard';
 
 @Controller('store/:storeId/cash-movement')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(StoreJwtGuard, PermissionsGuard)
 export class CashMovementController {
   constructor(private readonly cashMovementsService: CashMovementService) {}
 

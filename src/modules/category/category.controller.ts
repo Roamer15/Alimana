@@ -12,7 +12,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { StoreJwtGuard } from '../auth/guards/store-jwt.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PermissionKey } from '../store/constants/permission-enum';
@@ -20,7 +19,6 @@ import { PermissionKeys } from '../auth/decorators/permissions.decorator';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
-@UseGuards(JwtAuthGuard)
 @Controller('store/:storeId/category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
