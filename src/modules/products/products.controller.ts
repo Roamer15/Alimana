@@ -14,7 +14,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateProductDto } from './dto/create-product.dto';
 import { StoreJwtGuard } from '../auth/guards/store-jwt.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -22,7 +21,6 @@ import { PermissionKeys } from '../auth/decorators/permissions.decorator';
 import { PermissionKey } from '../store/constants/permission-enum';
 import { UpdateProductDto } from './dto/update-product.dto';
 
-@UseGuards(JwtAuthGuard)
 @Controller('store/:storeId/product')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
