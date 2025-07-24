@@ -84,13 +84,13 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(accessTokenExpirationMs),
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(refreshTokenExpirationMs),
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
     this.logger.log(`new user Registration successful userEmail: ${user.email}`);
@@ -120,13 +120,13 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(accessTokenExpirationMs),
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(refreshTokenExpirationMs),
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
     this.logger.log(`new user Registrat or login successfuly from google userEmail: ${user.email}`);
@@ -150,13 +150,13 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(accessTokenExpirationMs),
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(refreshTokenExpirationMs),
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
     this.logger.log(` user  login successfuly from google userEmail: ${user.email}`);
@@ -200,14 +200,14 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(accessTokenExpirationMs),
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
     res.cookie('refresh_token', refreshToken, {
       // Mettre à jour le refresh token
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(refreshTokenExpirationMs),
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
     this.logger.log(
@@ -238,13 +238,13 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(accessTokenExpirationMs),
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
     res.cookie('refresh_token', newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(refreshTokenExpirationMs),
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
     this.logger.log(`Tokens refreshed successfully`);
@@ -263,23 +263,23 @@ export class AuthController {
     res.clearCookie('access_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
     res.clearCookie('refresh_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
     // dans la messure ou j'utiliser deux token!!!!
     res.clearCookie('store_access_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
     return { message: 'Logged out successfully' };
   }
 
-  @Get('profile')
+  @Get('user/me')
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: JwtAuthRequest) {
     // const { userId } = this.requestContextService.getContext();
@@ -288,7 +288,7 @@ export class AuthController {
   }
 
   // route protégée utilisant le jeton d'accès spécifique à la boutique
-  @Get('store-dashboard')
+  @Get('store/me')
   @UseGuards(StoreJwtGuard)
   getStoreDashboard(@Req() req: StoreJwtAuthRequest) {
     return req.user; // Contient { userId, storeUserId, storeId, roleId, roleName, permissions }

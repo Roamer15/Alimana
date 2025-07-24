@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -38,20 +42,46 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
 
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: any) => {
-          // Utilisation de 'any' ici pour l'objet request d'Express
-          let token: string | null = null;
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          if (request && request.cookies) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            token = request.cookies['access_token'] as string; // Utilise 'access_token' car c'est le token mis à jour après selectStore
+        (req: any) => {
+          // 1. Cookie
+          const cookieToken = req?.cookies?.['access_token'];
+          if (cookieToken) {
+            console.log('Access token (cookie):', cookieToken); // DEBUG
+            return cookieToken;
           }
-          return token;
+
+          // 2. Authorization header
+          const authHeader = req?.headers?.authorization;
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+            const headerToken = authHeader.slice(7);
+            console.log('Access token (header):', headerToken); // DEBUG
+            return headerToken;
+          }
+
+          return null;
         },
       ]),
       ignoreExpiration: false,
       secretOrKey: jwtSecret,
     });
+
+    // super({
+    //   jwtFromRequest: ExtractJwt.fromExtractors([
+    //     (request: any) => {
+    //       // Utilisation de 'any' ici pour l'objet request d'Express
+    //       let token: string | null = null;
+    //       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    //       if (request && request.cookies) {
+    //         console.log('Access token (cookie):', token); // DEBUG
+    //         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    //         token = request.cookies['access_token'] as string; // Utilise 'access_token' car c'est le token mis à jour après selectStore
+    //       }
+    //       return token;
+    //     },
+    //   ]),
+    //   ignoreExpiration: false,
+    //   secretOrKey: jwtSecret,
+    // });
   }
 
   /**

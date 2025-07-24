@@ -15,6 +15,11 @@ async function bootstrap() {
   // Register the global exception filter
   app.useGlobalFilters(new AllExceptionsFilter(logger));
 
+  app.enableCors({
+    origin: '*',
+    credentials: true,
+  });
+
   app.use(cookieParser()); // Enable the cookie-parser middleware
 
   app.setGlobalPrefix('api'); // Prefix all routes with /api (e.g., /users becomes /api/users)
