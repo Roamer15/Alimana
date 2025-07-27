@@ -150,14 +150,19 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(accessTokenExpirationMs),
+      domain: 'localhost',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
     });
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(refreshTokenExpirationMs),
+      domain: 'localhost',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
     });
+    this.logger.log(`Access_token: ${accessToken}, Refresh_token: ${refreshToken}`);
 
     this.logger.log(` user  login successfuly from google userEmail: ${user.email}`);
 
