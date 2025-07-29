@@ -59,7 +59,7 @@ export class AnalyticsService {
       .addSelect('SUM(item.totalPrice)', 'revenue')
       .addSelect('SUM((item.unitPrice - product.costPrice) * item.quantity)', 'profit')
       .where('item.storeId = :storeId', { storeId })
-      .where("item.saleDate >= CURRENT_DATE - INTERVAL '30 days'")
+      .andWhere("item.saleDate >= CURRENT_DATE - INTERVAL '30 days'")
       .groupBy('day')
       .orderBy('day')
       .getRawMany();
@@ -85,7 +85,7 @@ export class AnalyticsService {
       .select("DATE_TRUNC('day', item.saleDate)", 'day')
       .addSelect('SUM(item.quantity)', 'total_units_sold')
       .where('item.storeId = :storeId', { storeId })
-      .where("item.saleDate >= CURRENT_DATE - INTERVAL '30 days'")
+      .andWhere("item.saleDate >= CURRENT_DATE - INTERVAL '30 days'")
       .groupBy('day')
       .orderBy('day')
       .getRawMany();
@@ -122,7 +122,7 @@ export class AnalyticsService {
         .createQueryBuilder('item')
         .select('SUM(item.totalPrice)', 'revenue')
         .where('item.storeId = :storeId', { storeId })
-        .where("DATE(item.saleDate) = CURRENT_DATE - INTERVAL '1 day'")
+        .andWhere("DATE(item.saleDate) = CURRENT_DATE - INTERVAL '1 day'")
         .getRawOne<RevenueResult>(),
     ]);
 
@@ -147,13 +147,13 @@ export class AnalyticsService {
         .createQueryBuilder('item')
         .select('SUM(item.quantity)', 'units')
         .where('item.storeId = :storeId', { storeId })
-        .where('DATE(item.saleDate) = CURRENT_DATE')
+        .andWhere('DATE(item.saleDate) = CURRENT_DATE')
         .getRawOne<UnitResult>(),
       this.saleItemRepo
         .createQueryBuilder('item')
         .select('SUM(item.quantity)', 'units')
         .where('item.storeId = :storeId', { storeId })
-        .where("DATE(item.saleDate) = CURRENT_DATE - INTERVAL '1 day'")
+        .andWhere("DATE(item.saleDate) = CURRENT_DATE - INTERVAL '1 day'")
         .getRawOne<UnitResult>(),
     ]);
 
@@ -178,14 +178,14 @@ export class AnalyticsService {
         .leftJoin('item.product', 'product')
         .where('item.storeId = :storeId', { storeId })
         .select('SUM((item.unitPrice - product.costPrice) * item.quantity)', 'profit')
-        .where('DATE(item.saleDate) = CURRENT_DATE')
+        .andWhere('DATE(item.saleDate) = CURRENT_DATE')
         .getRawOne<ProfitResult>(),
       this.saleItemRepo
         .createQueryBuilder('item')
         .leftJoin('item.product', 'product')
         .select('SUM((item.unitPrice - product.costPrice) * item.quantity)', 'profit')
         .where('item.storeId = :storeId', { storeId })
-        .where("DATE(item.saleDate) = CURRENT_DATE - INTERVAL '1 day'")
+        .andWhere("DATE(item.saleDate) = CURRENT_DATE - INTERVAL '1 day'")
         .getRawOne<ProfitResult>(),
     ]);
 
