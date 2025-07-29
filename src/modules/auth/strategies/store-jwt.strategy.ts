@@ -89,7 +89,20 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
    * @param payload Le payload extrait du JWT.
    * @returns Un objet représentant l'utilisateur validé dans le contexte de la boutique (payload pour req.user).
    */
+
   async validate(payload: StoreJwtPayload): Promise<StoreJwtPayload> {
+    if (
+      !payload.storeId ||
+      !payload.storeUserId ||
+      !payload.roleId ||
+      !Array.isArray(payload.permissions)
+    ) {
+      throwHttpError(ErrorCode.UNAUTHORIZED, {
+        reason: 'Jeton d’accès boutique manquant ou incomplet.',
+        details: payload,
+      });
+    }
+
     // Validation de base : s'assurer que store_user_id existe et est lié à l'user_id global
     const storeUser = await this.storeUsersRepository.findOne({
       where: { id: payload.storeUserId, user: { id: payload.userId } },

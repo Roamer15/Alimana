@@ -287,8 +287,6 @@ export class AuthController {
   @Get('user/me')
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: JwtAuthRequest) {
-    // const { userId } = this.requestContextService.getContext();
-    // req.user est maintenant UserJwtPayload
     return req.user; // Contient { sub (userId), email, canCreateStore }
   }
 

@@ -24,6 +24,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
+    if (request.url.includes('__nextjs_original-stack-frames')) {
+      return;
+    }
+
     let status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
     let responseBody: {
       code: ErrorCode;

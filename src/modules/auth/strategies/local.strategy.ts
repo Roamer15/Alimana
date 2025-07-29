@@ -15,6 +15,7 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
     const user = await this.authService.validateUser(email, password);
     // Si authService.validateUser ne lève pas d'erreur, l'utilisateur est valide.
     // Pas besoin de vérifier `!user` ici, car `validateUser` gère les erreurs.
+    console.log(user);
     return user;
   }
 }
