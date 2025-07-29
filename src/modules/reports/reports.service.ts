@@ -18,11 +18,11 @@ export class ReportsService {
       .createQueryBuilder('item')
       .leftJoin('item.sale', 'sale')
       .leftJoin('item.product', 'product')
-      .select('SUM(item.totalPrice', 'totalRevenue')
+      .select('SUM(item.totalPrice)', 'totalRevenue')
       .addSelect('SUM(item.quantity)', 'totalUnits')
       .addSelect('SUM((item.unitPrice - product.costPrice) * item.quantity)', 'totalProfit')
       .where('item.storeId = :storeId', { storeId })
-      .where('sale.cratedAt BETWEEN :from AND :to', { from, to })
+      .andWhere('sale.createdAt BETWEEN :from AND :to', { from, to })
       .getRawOne<{ totalRevenue: string; totalUnits: string; totalProfit: string }>();
 
     const totalRevenue = parseFloat(sales?.totalRevenue || '0');
