@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GeminiService } from 'src/ai/gemini.service';
+import { Product } from 'src/entities/product.entity';
 import { SaleItem } from 'src/entities/sale-item.entity';
 import { MyLoggerService } from 'src/my-logger/my-logger.service';
 import { Repository } from 'typeorm';
@@ -11,6 +12,7 @@ export class ReportsService {
     private readonly logger: MyLoggerService,
     private geminiService: GeminiService,
     @InjectRepository(SaleItem) private readonly saleItemRepo: Repository<SaleItem>,
+    @InjectRepository(Product) private readonly productRepo: Repository<Product>,
   ) {}
 
   async generateExecutiveSummary(from: Date, to: Date, storeId: number) {
@@ -68,5 +70,34 @@ export class ReportsService {
       topProductUnits: parseInt(topProduct?.totalUnits || '0', 10),
       insights: aiInsights,
     };
+  }
+
+  async getSalesReport(storeId: number, from?: Date, to?: Date) {
+    const endDate = to ?? new Date();
+    const startDate = from ?? new Date(new Date(endDate).setDate(endDate.getDate() - 7));
+
+    return this.saleItemRepo
+      .createQueryBuilder('item')
+      .leftJoinAndSelect('item.product', 'product')
+      .leftJoin('item.sale', 'sale')
+      .where('item.storeId = :storeId', { storeId })
+      .andWhere('sale.createdAt BETWEEN :from AND :to', { from: startDate, to: endDate })
+      .select([
+        'product.name AS productName',
+        'SUM(item.quantity) AS totalUnitsSold',
+        'SUM(item.totalPrice) AS totalRevenue',
+        'SUM((item.unitPrice - product.costPrice) * item.quantity) AS profit',
+      ])
+      .groupBy('product.name')
+      .orderBy('totalUnitsSold', 'DESC')
+      .getRawMany();
+  }
+
+  async getInventoryReport(storeId: number) {
+    return this.productRepo.find({
+      where: { storeId },
+      select: ['id', 'name', 'quantityInStock', 'sellingPrice', 'costPrice', 'discountPercentage'],
+      order: { quantityInStock: 'ASC' },
+    });
   }
 }
