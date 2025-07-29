@@ -23,6 +23,8 @@ import { ProductsModule } from './modules/products/products.module';
 import { CategoryModule } from './modules/category/category.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { InvitationModule } from './modules/invitation/invitation.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { ReportsModule } from './modules/reports/reports.module';
 // Importez votre middleware de payload
 
 @Module({
@@ -74,6 +76,8 @@ import { InvitationModule } from './modules/invitation/invitation.module';
     CashRegisterModule,
     ProductsModule,
     CategoryModule,
+    AnalyticsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
