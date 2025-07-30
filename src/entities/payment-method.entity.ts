@@ -34,8 +34,12 @@ export class PaymentMethod {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: false })
+  requiresReference?: boolean;
+
+  @Index()
   @Column({ nullable: true })
-  displayName: string; // ex: 'Espèces'
+  type: PaymentMethodType; // ex: 'Espèces'
 
   @Column({ default: false })
   isDefault: boolean; // ← Vrai si c’est une méthode par défaut

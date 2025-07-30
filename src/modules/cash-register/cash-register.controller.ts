@@ -17,6 +17,7 @@ import { StoreJwtGuard } from '../auth/guards/store-jwt.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PermissionKeys } from '../auth/decorators/permissions.decorator';
 import { PermissionKey } from '../store/constants/permission-enum';
+import { CashRegisterSession } from 'src/entities/cash-register-session.entity';
 
 @Controller('store/:storeId/cash-register')
 export class CashRegisterController {
@@ -62,5 +63,16 @@ export class CashRegisterController {
   @Delete(':id')
   async remove(@Param('storeId') storeId: number, @Param('id', ParseIntPipe) id: number) {
     return this.cashRegisterService.deleteCashRegister(storeId, id);
+  }
+
+  // New: Get historical sessions for a specific cash register
+  @UseGuards(StoreJwtGuard, PermissionsGuard)
+  @PermissionKeys(PermissionKey.VIEW_CASH_REGISTER_SESSIONS) // Assuming this permission covers viewing history
+  @Get(':cashRegisterId/history')
+  async getCashRegisterHistory(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Param('cashRegisterId', ParseIntPipe) cashRegisterId: number,
+  ): Promise<CashRegisterSession[]> {
+    return this.cashRegisterService.getCashRegisterHistory(storeId, cashRegisterId);
   }
 }
