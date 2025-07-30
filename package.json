@@ -28,6 +28,7 @@
     "migration:revert": "typeorm-ts-node-commonjs -d ./dist/database/data-source.js migration:revert"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@nestjs/common": "^11.1.3",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.3",
