@@ -5,7 +5,7 @@ import { Store } from 'src/entities/store.entity';
 import { Role } from 'src/entities/role.entity';
 import { StoreSetting } from 'src/entities/store-setting.entity';
 import { User } from 'src/entities/User.entity';
-import { PaymentMethod } from 'src/entities/payment-method.entity';
+import { PaymentMethod, PaymentMethodType } from 'src/entities/payment-method.entity';
 
 import { MyLoggerService } from '../../my-logger/my-logger.service';
 import { DataSource, Repository } from 'typeorm';
@@ -27,6 +27,20 @@ export class UpdateStoreDto {
   address?: string;
   phone?: string;
 }
+
+// --- NEW CONSTANT: Define your default payment methods here ---
+const DEFAULT_PAYMENT_METHODS = [
+  { name: 'Cash', type: PaymentMethodType.CASH, isDefault: true },
+  { name: 'Card (Credit/Debit)', type: PaymentMethodType.CREDIT_CARD, isDefault: false },
+  {
+    name: 'Mobile Money',
+    type: PaymentMethodType.MOBILE_MONEY,
+    isDefault: false,
+    requiresReference: true,
+  },
+  { name: 'Bank Transfer', type: PaymentMethodType.BANK_TRANSFER, isDefault: false },
+  // Add more as needed
+];
 
 @Injectable()
 export class StoreService {
@@ -80,7 +94,6 @@ export class StoreService {
     let newStoreUser: StoreUser;
     let adminRole: Role;
     let defaultCashRegister: CashRegister;
-    let defaultPaymentMethod: PaymentMethod;
 
     try {
       const result = await this.dataSource.transaction(async (manager) => {
@@ -167,23 +180,27 @@ export class StoreService {
         );
 
         // 6. Méthode de paiement par défaut pour la nouvelle boutique créée
-        defaultPaymentMethod = manager.getRepository(PaymentMethod).create({
-          // Correction nom variable
-          name: 'cash',
-          displayName: 'Cash',
-          isActive: true,
-          isDefault: true,
-          storeId: newStore.id,
-        });
-        await manager.getRepository(PaymentMethod).save(defaultPaymentMethod); // Correction nom variable
-        if (!defaultPaymentMethod.id) {
-          throw new Error('Failed to generate Default Payment Method ID during creation.');
-        }
+        // defaultPaymentMethod = manager.getRepository(PaymentMethod).create({
+        //   // Correction nom variable
+        //   name: 'cash',
+        //   type: PaymentMethodType.CASH,
+        //   isActive: true,
+        //   isDefault: true,
+        //   storeId: newStore.id,
+        // });
+
+        const paymentMethodsToCreate = DEFAULT_PAYMENT_METHODS.map((method) =>
+          manager.getRepository(PaymentMethod).create({
+            ...method,
+            isActive: true, // All default methods are active
+            storeId: newStore.id,
+          }),
+        );
+        await manager.getRepository(PaymentMethod).save(paymentMethodsToCreate);
         this.logger.log(
-          `Default payment method 'cash' created for store ${newStore.name}. ID: ${defaultPaymentMethod.id}.`,
+          `${paymentMethodsToCreate.length} default payment methods created for store ${newStore.name}.`,
           'StoreService',
         );
-
         // 7. Créer les paramètres par défaut de la boutique
         const storeSettingsToCreate = getDefaultStoreSettings(newStore.id, newStoreUser).map(
           (setting) =>

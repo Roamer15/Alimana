@@ -198,6 +198,15 @@ export class AuthController {
     );
     const accessTokenExpirationMs = this.configService.jwtAccesTokenExpirationMs;
     const refreshTokenExpirationMs = this.configService.jwtRefrehTokenExpirationMs;
+    console.log(`selectStore function :accessToken genere apres selection: ${accessToken} `);
+
+    // Supprime d'abord les cookies avant de les remettre à jour
+    // res.clearCookie('access_token', {
+    //   httpOnly: true,
+    //   secure: false,
+    //   sameSite: 'lax',
+    //   path: '/',
+    // });
 
     // Mettre à jour les cookies avec les nouveaux tokens (le store_access_token est le nouveau access_token)
     res.cookie('access_token', accessToken, {
@@ -218,7 +227,7 @@ export class AuthController {
     this.logger.log(
       `user : ${userId} successfully connect to the store ${selectStoreDto.storeUserId}`,
     );
-    return { message: 'Store selected successfully' };
+    return { message: 'Store selected successfully', accessToken };
   }
 
   // --- 6. Refresh Token ---

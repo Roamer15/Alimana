@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
   JoinColumn,
   Index,
+  OneToOne,
 } from 'typeorm';
 import { Store } from './store.entity';
 import { CashRegisterSession } from './cash-register-session.entity';
@@ -43,4 +44,12 @@ export class CashRegister {
 
   @OneToMany(() => CashRegisterSession, (session) => session.cashRegister)
   cashRegisterSessions: CashRegisterSession[];
+
+  // New: One-to-one relationship to get the currently open session
+  @OneToOne(() => CashRegisterSession, (session) => session.cashRegister, {
+    nullable: true, // A cash register might not have an open session
+    onDelete: 'SET NULL', // Or whatever appropriate action on session deletion
+  })
+  @JoinColumn({ name: 'current_open_session_id' })
+  currentOpenSession: CashRegisterSession | null;
 }

@@ -308,4 +308,16 @@ export class ProductsService {
       relations: ['category'],
     });
   }
+
+  async findAllProductsForStore(storeId: number): Promise<Product[]> {
+    // Validate that the user in the context is authorized for this store
+    // this.validateStoreAccess(storeId);
+
+    const products = await this.productRepo.find({
+      where: { storeId: storeId, isActive: true }, // Optionally filter for active products
+      relations: ['category', 'createdBy'], // Eagerly load category and creator info
+    });
+
+    return products;
+  }
 }

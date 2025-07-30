@@ -23,6 +23,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { CategoryModule } from './modules/category/category.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { InvitationModule } from './modules/invitation/invitation.module';
+import { PaymentMethodModule } from './modules/payment-method/payment-method.module';
 // Importez votre middleware de payload
 
 @Module({
@@ -36,6 +37,7 @@ import { InvitationModule } from './modules/invitation/invitation.module';
     CashMovementModule,
     SalesModule,
     InvitationModule,
+    PaymentMethodModule,
     // Configuration de ClsModule au niveau racine
     ClsModule.forRoot({
       global: true, // Rend ClsModule globalement disponible
