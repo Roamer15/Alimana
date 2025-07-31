@@ -109,6 +109,11 @@ const defaultPermissions = [
 export class SeedDefaultPermissions1753207596966 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Utilisez queryRunner.manager pour interagir avec les entités dans la transaction de migration
+    const hasTable = await queryRunner.hasTable('permissions');
+    if (!hasTable) {
+      console.log("Skipping permissions seed: table doesn't exist.");
+      return;
+    }
     const permissionRepository = queryRunner.manager.getRepository(Permission);
     for (const permData of defaultPermissions) {
       const existingPermission = await permissionRepository.findOne({
