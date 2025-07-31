@@ -6,7 +6,6 @@ import * as path from 'path';
 // Mark this class as injectable so it can be used by NestJS's dependency injection
 @Injectable()
 export class MyLoggerService extends ConsoleLogger {
-  // Writes a log entry to a file based on the log level
   async logToFile(entry: string, level: string) {
     // Format the log entry with date, time, and message
     const formattedEntry = `${Intl.DateTimeFormat('en-US', {
