@@ -34,6 +34,8 @@ export class StoreJwtGuard extends AuthGuard('store-jwt') {
     // Cast pour accéder aux propriétés connues (JwtPayload)
     const payload = user as unknown as JwtPayload;
 
+    console.log(payload);
+
     this.requestContextService.setContext({
       userId: payload.userId ?? null,
       email: payload.email ?? null,
