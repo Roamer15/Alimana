@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StoreUser, StoreUserStatus } from '../../entities/store-user.entity';
 import { Store } from 'src/entities/store.entity';
@@ -19,6 +19,14 @@ import { getDefaultStoreSettings } from './constants/store-default-settings';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { AuthService } from '../auth/auth.service';
 import { RequestContextService } from 'src/common/context/request-context/request-context.service';
+
+// DTO pour la mise à jour de boutique
+export class UpdateStoreDto {
+  name?: string;
+  description?: string;
+  address?: string;
+  phone?: string;
+}
 
 @Injectable()
 export class StoreService {
@@ -213,38 +221,168 @@ export class StoreService {
     }
   }
 
-  // async findAllStores(): Promise<Store[]> {
-  //   const {
-  //     storeUserId: callerGlobalUserId,
-  //     ipAddress,
-  //     userAgent,
-  //   } = this.requestContextService.getContext();
+  /**
+   * Récupère une boutique par son ID.
+   * Accessible par le Super-Admin, le propriétaire de la boutique, ou un StoreUser de cette boutique.
+   * @param id L'ID de la boutique.
+   * @returns La boutique trouvée.
+   */
 
-  //   const callerUser = await this.userRepository.findOne({ where: { id: callerGlobalUserId } });
-  //   if (!callerUser || !callerUser.canCreateStore) {
-  //     // canCreateStore est l'indicateur SuperAdmin
-  //     throw new ForbiddenException(
-  //       'Accès refusé. Seuls les Super-Admins peuvent lister toutes les boutiques.',
-  //     );
-  //   }
+  async findStoreById(id: number): Promise<Store> {
+    const { userId, storeUserId } = this.requestContextService.getContext();
 
-  //   const stores = await this.storeRepository.find({ relations: ['owner'] });
+    if (!userId || !storeUserId) {
+      throwHttpError(ErrorCode.CONTEXT_INFO_NOTFOUND, {
+        userId,
+        storeUserId,
+      });
+    }
 
-  //   this.logger.log(
-  //     `SuperAdmin (User ID: ${callerGlobalUserId}) fetched all stores.`,
-  //     'StoreService',
-  //   );
-  //   await this.auditLogsService.createAuditLog({
-  //     storeId: null, // Pas de storeId spécifique car c'est une action globale
-  //     storeUserId: callerGlobalUserId,
-  //     actionType: AuditActionType.VIEW,
-  //     entity: 'Store',
-  //     entityId: 'null',
-  //     notes: `SuperAdmin (User ID: ${callerGlobalUserId}) a consulté la liste de toutes les boutiques.`,
-  //     ipAddress,
-  //     userAgent,
-  //   });
+    const store = await this.storeRepository.findOne({
+      where: { id },
+      relations: ['owner'],
+    });
 
-  //   return stores;
-  // }
+    if (!store) {
+      throwHttpError(ErrorCode.STORE_NOT_FOUND, { id });
+    }
+
+    let isAuthorized = false;
+
+    //  Si c'est le propriétaire de la boutique
+    if (store.ownerId === userId) {
+      isAuthorized = true;
+    }
+    // 3. Si c'est un StoreUser de cette boutique
+    else if (storeUserId) {
+      const isStoreUserOfThisStore = await this.storeUserRepository.findOne({
+        where: { id: storeUserId, store: { id: id }, user: { id: userId } },
+      });
+      if (isStoreUserOfThisStore) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      throw new ForbiddenException(`Accès refusé à la boutique avec l'ID ${id}.`);
+    }
+
+    return store;
+  }
+
+  /**
+   * Updates a store's information.
+   * Accessible by the store owner or a StoreUser with 'manage_store_settings' permission.
+   * @param id The ID of the store to update.
+   * @param updateStoreDto The update data.
+   * @returns The updated store.
+   */
+  async updateStore(id: number, updateStoreDto: UpdateStoreDto): Promise<Store> {
+    const { userId, storeId: contextStoreId } = this.requestContextService.getContext();
+
+    if (!userId || !contextStoreId) {
+      throwHttpError(ErrorCode.CONTEXT_INFO_NOTFOUND, {
+        userId,
+        contextStoreId,
+      });
+    }
+    // Fetch the store to get its ownerId
+    const store = await this.storeRepository.findOne({
+      where: { id },
+      relations: ['owner'],
+    });
+
+    if (!store) {
+      throwHttpError(ErrorCode.STORE_NOT_FOUND, { id });
+    }
+
+    let isAuthorized = false;
+
+    // 1. If it's the owner of the boutique
+    if (store.ownerId === userId) {
+      isAuthorized = true;
+    }
+    // 2. If it's a StoreUser of this boutique AND the storeId in the token matches the requested ID
+    // (The PermissionsGuard already ensures 'manage_store_settings' for StoreUsers)
+    else if (contextStoreId === id) {
+      const isStoreUserOfThisStore = await this.storeUserRepository.findOne({
+        where: { user: { id: userId }, store: { id: id } },
+      });
+      if (isStoreUserOfThisStore) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      throw new ForbiddenException('Access denied. You are not allowed to edit this store.');
+    }
+
+    // const oldValue = JSON.parse(JSON.stringify(store)); // Capture l'ancienne valeur
+
+    // Apply updates
+    Object.assign(store, updateStoreDto);
+    const updatedStore = await this.storeRepository.save(store);
+
+    this.logger.log(`Store ID ${id} updated by User (ID: ${userId}).`, 'StoreService');
+    // await this.auditLogsService.createAuditLog({
+    //   storeId: updatedStore.id,
+    //   storeUserId: contextStoreId || userId,
+    //   actionType: AuditActionType.UPDATE,
+    //   entity: 'Store',
+    //   entityId: String(updatedStore.id),
+    //   oldValue: oldValue,
+    //   newValue: JSON.parse(JSON.stringify(updatedStore)),
+    //   ipAddress,
+    //   userAgent,
+    //   notes: `Boutique "${updatedStore.name}" (ID: ${updatedStore.id}) mise à jour par l'utilisateur (ID: ${userId}).`,
+    // });
+
+    return updatedStore;
+  }
+
+  /**
+   * Deletes a store.
+   * Accessible only by the store owner.
+   * @param id The ID of the store to delete.
+   * @returns true if the deletion is successful..
+   */
+  async deleteStore(id: number): Promise<boolean> {
+    const { userId } = this.requestContextService.getContext();
+
+    if (!userId) {
+      throwHttpError(ErrorCode.CONTEXT_INFO_NOTFOUND, {
+        userId,
+      });
+    }
+
+    const storeToDelete = await this.storeRepository.findOne({ where: { id } });
+    if (!storeToDelete) {
+      throwHttpError(ErrorCode.STORE_NOT_FOUND, { id });
+    }
+
+    //  Checks if the user is the owner of the shop
+    if (storeToDelete.ownerId !== userId) {
+      throw new ForbiddenException('Access denied. Only the shop owner can delete it..');
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      await manager.getRepository(Store).remove(storeToDelete);
+    });
+
+    this.logger.log(`Store ID ${id} deleted by owner (User ID: ${userId}).`, 'StoreService');
+    // await this.auditLogsService.createAuditLog({
+    //   storeId: null, // The store is being deleted, so no specific storeId context
+    //   storeUserId: userId,
+    //   actionType: AuditActionType.DELETE,
+    //   entity: 'Store',
+    //   entityId: String(id),
+    //   oldValue: JSON.parse(JSON.stringify(storeToDelete)),
+    //   newValue: null,
+    //   ipAddress,
+    //   userAgent,
+    //   notes: `Boutique "${storeToDelete.name}" (ID: ${storeToDelete.id}) supprimée par son propriétaire (User ID: ${userId}).`,
+    // });
+
+    return true;
+  }
 }

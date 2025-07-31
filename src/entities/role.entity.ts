@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
-  JoinColumn,
   ManyToMany,
   JoinTable,
 } from 'typeorm';
@@ -32,16 +31,13 @@ export class Role {
   // Boutique à laquelle ce rôle est affecté.
   // Plusieurs rôles peuvent appartenir à une même boutique.
   @ManyToOne(() => Store, (store) => store.roles, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'storeId' }) // optionnel utliser si je veux nommer la FK
   store: Store;
-
   @Column()
   storeId: number;
 
   // role est creer par un employer de la table stor_user
   //cette relation donner l'id du stor_user qui a creer le role
   @ManyToOne(() => StoreUser, (user) => user.rolesCreated, { nullable: true })
-  @JoinColumn({ name: 'createdByUserId' })
   createdBy: StoreUser;
 
   @Column({ nullable: true })
@@ -61,8 +57,8 @@ export class Role {
   @ManyToMany(() => Permission, (permission) => permission.roles, { cascade: true })
   @JoinTable({
     name: 'role_permissions',
-    joinColumn: { name: 'roleId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'permissionId', referencedColumnName: 'id' },
+    joinColumn: { name: 'role_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'permission_id', referencedColumnName: 'id' },
   })
   permissions: Permission[];
 

@@ -42,6 +42,11 @@ const defaultPermissions = [
     category: 'Sales & Cash Registers',
   },
   {
+    key: 'manage_cash_movements',
+    label: 'Record cash deposits/withdrawals',
+    category: 'Sales & Cash Registers',
+  },
+  {
     key: 'manage_payment_methods',
     label: 'Manage payment methods',
     category: 'Sales & Cash Registers',

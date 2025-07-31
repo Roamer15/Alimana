@@ -2,30 +2,45 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  OneToOne,
-  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  Index,
 } from 'typeorm';
 import { Sale } from './sale.entity';
+import { Store } from './store.entity';
+
+export enum ReceiptType {
+  ORIGINAL = 'original',
+  DUPLICATE = 'duplicate',
+  REFUND = 'refund',
+  // etc.
+}
 
 @Entity('sale-receipts')
 export class Receipt {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToOne(() => Sale, (sale) => sale.receipt, {
-    onDelete: 'SET NULL', // ou 'NO ACTION' selon besoin
-  })
-  @JoinColumn({ name: 'saleId' }) // colonne FK dans receipt
+  @ManyToOne(() => Sale, (sale) => sale.receipts, { onDelete: 'CASCADE' })
   sale: Sale;
 
-  @Column({ nullable: true })
+  @Column()
   saleId: number;
+
+  @ManyToOne(() => Store, { onDelete: 'RESTRICT' })
+  store: Store;
+
+  @Column()
+  storeId: number;
+
+  @Column({ type: 'enum', enum: ReceiptType, default: ReceiptType.ORIGINAL })
+  type: ReceiptType;
 
   @Column({ type: 'text', nullable: true })
   content: string; // HTML ou JSON formaté du reçu
 
+  @Index()
   @Column({ type: 'varchar', length: 100, nullable: true })
   receiptNumber: string; // numéro unique par boutique
 

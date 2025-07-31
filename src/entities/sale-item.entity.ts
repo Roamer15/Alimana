@@ -8,15 +8,15 @@ export class SaleItem {
   id: number;
 
   @ManyToOne(() => Sale, (sale) => sale.saleItems, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'saleId' })
+  @JoinColumn()
   sale: Sale;
 
   @Index()
   @Column()
   saleId: number;
 
-  @ManyToOne(() => Product, { eager: true })
-  @JoinColumn({ name: 'productId' })
+  @ManyToOne(() => Product, (product) => product.saleItems, { onDelete: 'RESTRICT', eager: true })
+  @JoinColumn()
   product: Product;
 
   @Index()

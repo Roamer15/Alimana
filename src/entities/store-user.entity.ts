@@ -35,7 +35,7 @@ export class StoreUser {
 
   // General user (from the Users table) linked to this store entry
   @ManyToOne(() => User, (user) => user.storeUsers, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn()
   @Index()
   user: User;
 
@@ -44,7 +44,7 @@ export class StoreUser {
 
   // Store this user belongs to
   @ManyToOne(() => Store, (store) => store.storeUsers, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'storeId' })
+  @JoinColumn()
   @Index()
   store: Store;
 
@@ -53,7 +53,7 @@ export class StoreUser {
 
   // Role of the user within the store (admin, cashier, etc.)
   @ManyToOne(() => Role, (role) => role.storeUsers, { eager: true })
-  @JoinColumn({ name: 'roleId' })
+  @JoinColumn()
   role: Role;
 
   @Column({ nullable: true })
@@ -84,7 +84,7 @@ export class StoreUser {
   auditLogs: Promise<AuditLog[]>; // Use Promise with lazy loading
 
   /** Cash register sessions opened or closed by this user */
-  @OneToMany(() => CashRegisterSession, (session) => session.createdBy, { lazy: true })
+  @OneToMany(() => CashRegisterSession, (session) => session.openedBy, { lazy: true })
   cashRegisterSessions: Promise<CashRegisterSession[]>; // Use Promise with lazy loading
 
   /** Roles created by this user for their store (if a StoreUser can create roles) */
