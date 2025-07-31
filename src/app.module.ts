@@ -25,7 +25,7 @@ import { SalesModule } from './modules/sales/sales.module';
 import { InvitationModule } from './modules/invitation/invitation.module';
 import { PaymentMethodModule } from './modules/payment-method/payment-method.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { ReportsModule } from './modules/reports/reports.modul
+import { ReportsModule } from './modules/reports/reports.module';
 // Importez votre middleware de payload
 
 @Module({
