@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Injectable } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport'; //La classe de base de NestJS pour créer des stratégies Passport.
-/**ExtractJwt: Un utilitaire de passport-jwt pour extraire le JWT de différentes manières (en-tête, corps, cookie, etc.).
-
-Strategy: La classe de stratégie JWT de base de passport-jwt. */
+import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AppConfigService } from '../../../config/config.service';
 import { User } from 'src/entities/User.entity';
@@ -11,9 +11,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ErrorCode } from 'src/common/errors/error-codes.enum';
 import { throwHttpError } from 'src/common/errors/http-exception.helper';
 
-// Payload pour le JWT global de l'utilisateur (doit correspondre à celui du contrôleur)
 export interface JwtPayload {
-  userId: number; // userId
+  userId: number;
   email: string;
   canCreateStore: boolean;
   iat?: number;
@@ -37,12 +36,18 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: any) => {
-          // Utilisation de 'any' ici pour l'objet request d'Express
           let token: string | null = null;
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          if (request && request.cookies) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            token = request.cookies['access_token'] as string;
+
+          if (request?.cookies?.access_token) {
+            token = request.cookies.access_token;
+            console.debug(`[JwtStrategy] Token extrait du cookie: ${token}`);
+          } else if (request?.headers?.authorization?.startsWith('Bearer ')) {
+            token = request.headers.authorization.split(' ')[1];
+            console.debug(`[JwtStrategy] Token extrait du header Authorization: ${token}`);
+          } else {
+            console.warn(
+              '[JwtStrategy] Aucun token JWT trouvé ni dans le cookie ni dans le header Authorization',
+            );
           }
           return token;
         },
@@ -52,21 +57,20 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  /**
-   * Valide le payload du JWT global de l'utilisateur.
-   * @param payload Le payload extrait du JWT.
-   * @returns Un objet représentant l'utilisateur validé (payload pour req.user).
-   */
   async validate(payload: JwtPayload): Promise<JwtPayload> {
+    console.debug(`[JwtStrategy] Validation du payload JWT:`, payload);
+
     const user = await this.usersRepository.findOne({ where: { id: payload.userId } });
+
     if (!user) {
-      // Utilisation de throwHttpError pour une erreur cohérente
+      console.warn(`[JwtStrategy] Aucun utilisateur trouvé avec l'ID ${payload.userId}`);
       throwHttpError(ErrorCode.INVALID_CREDENTIALS, {
         reason: 'User not found based on JWT payload.',
       });
     }
-    // Retourne le payload directement comme objet utilisateur pour l'accès global
-    // Assurez-vous que la structure correspond à UserJwtPayload du contrôleur
+
+    console.debug(`[JwtStrategy] Utilisateur validé: ID ${user.id}, email ${user.email}`);
+
     return {
       userId: payload.userId,
       email: payload.email,

@@ -24,8 +24,8 @@ export class Category {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  // @Column({ nullable: true })
-  // parentId: number; // pour les catégories hiérarchiques
+  @Column({ nullable: true, type: 'varchar' })
+  color: string;
 
   @ManyToOne(() => Store, (store) => store.categories, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'store_id' })

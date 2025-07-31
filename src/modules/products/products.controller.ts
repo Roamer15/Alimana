@@ -83,4 +83,11 @@ export class ProductsController {
   ) {
     return this.productsService.deleteProduct(storeId, productId);
   }
+
+  @Get('all')
+  @HttpCode(HttpStatus.OK)
+  @PermissionKeys(PermissionKey.MANAGE_PRODUCTS)
+  async findAllProducts(@Param('storeId', ParseIntPipe) storeId: number) {
+    return this.productsService.findAllProductsForStore(storeId);
+  }
 }

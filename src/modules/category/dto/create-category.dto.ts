@@ -10,4 +10,9 @@ export class CreateCategoryDto {
   @IsOptional()
   @MaxLength(250)
   description: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(250)
+  color?: string;
 }

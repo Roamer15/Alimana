@@ -1,4 +1,5 @@
 import { Expose, Type } from 'class-transformer';
+import { PaymentMethodType } from 'src/entities/payment-method.entity';
 
 // Store
 class StoreDto {
@@ -51,7 +52,7 @@ class PaymentMethodDto {
   name: string;
 
   @Expose()
-  displayName: string;
+  type: PaymentMethodType;
 }
 
 // Payment

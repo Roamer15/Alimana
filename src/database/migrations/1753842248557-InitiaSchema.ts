@@ -1,17 +1,12 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class InitSchema1753206965668 implements MigrationInterface {
-  name = 'InitSchema1753206965668';
+export class InitiaSchema1753842248557 implements MigrationInterface {
+  name = 'InitiaSchema1753842248557';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`
-  DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'invitations_status_enum') THEN
-      CREATE TYPE "public"."invitations_status_enum" AS ENUM('pending', 'accepted', 'expired', 'cancelled');
-    END IF;
-  END $$;
-`);
-
+    await queryRunner.query(
+      `CREATE TYPE "public"."invitations_status_enum" AS ENUM('pending', 'accepted', 'expired', 'cancelled')`,
+    );
     await queryRunner.query(
       `CREATE TABLE "invitations" ("id" SERIAL NOT NULL, "email" character varying NOT NULL, "token" character varying NOT NULL, "status" "public"."invitations_status_enum" NOT NULL DEFAULT 'pending', "expires_at" TIMESTAMP NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "accepted_at" TIMESTAMP, "store_id" integer NOT NULL, "role_id" integer NOT NULL, "invited_by_id" integer NOT NULL, CONSTRAINT "UQ_e577dcf9bb6d084373ed3998509" UNIQUE ("token"), CONSTRAINT "PK_5dec98cfdfd562e4ad3648bbb07" PRIMARY KEY ("id"))`,
     );
@@ -43,7 +38,7 @@ export class InitSchema1753206965668 implements MigrationInterface {
       `CREATE UNIQUE INDEX "IDX_08760e2e1af00efe7c577f22c8" ON "store_settings" ("store_id", "key") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "cash_registers" ("id" SERIAL NOT NULL, "store_id" integer NOT NULL, "name" character varying(100) NOT NULL, "description" text, "active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_c1cc711056395d079d8f041ce34" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "cash_registers" ("id" SERIAL NOT NULL, "store_id" integer NOT NULL, "name" character varying(100) NOT NULL, "description" text, "active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "current_open_session_id" integer, CONSTRAINT "REL_e68cc369da065432b260262a0b" UNIQUE ("current_open_session_id"), CONSTRAINT "PK_c1cc711056395d079d8f041ce34" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_0884e1723faa3908dc2c1c9edd" ON "cash_registers" ("store_id") `,
@@ -77,7 +72,7 @@ export class InitSchema1753206965668 implements MigrationInterface {
       `CREATE INDEX "IDX_5a1aa23955689611e290bfa1a3" ON "cash_register_sessions" ("cash_register_id") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "category" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "description" text, "store_id" integer NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9c4e4a89e3674fc9f382d733f03" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "category" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "description" text, "color" character varying, "store_id" integer NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9c4e4a89e3674fc9f382d733f03" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_23c05c292c439d77b0de816b50" ON "category" ("name") `,
@@ -245,10 +240,13 @@ export class InitSchema1753206965668 implements MigrationInterface {
       `CREATE INDEX "IDX_12fd861c33c885f01b9a7da7d9" ON "payments" ("payment_method_id") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "payment_methods" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "is_active" boolean NOT NULL DEFAULT true, "display_name" character varying, "is_default" boolean NOT NULL DEFAULT false, "store_id" integer NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_34f9b8c6dfb4ac3559f7e2820d1" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "payment_methods" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "is_active" boolean NOT NULL DEFAULT true, "requires_reference" boolean NOT NULL DEFAULT false, "type" character varying, "is_default" boolean NOT NULL DEFAULT false, "store_id" integer NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_34f9b8c6dfb4ac3559f7e2820d1" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_a793d7354d7c3aaf76347ee5a6" ON "payment_methods" ("name") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_3757f1b7c87773d4e14c415f5a" ON "payment_methods" ("type") `,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_75bd6d443e647f6de95776a786" ON "payment_methods" ("store_id") `,
@@ -356,6 +354,9 @@ export class InitSchema1753206965668 implements MigrationInterface {
     );
     await queryRunner.query(
       `ALTER TABLE "cash_registers" ADD CONSTRAINT "FK_0884e1723faa3908dc2c1c9edd7" FOREIGN KEY ("store_id") REFERENCES "stores"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "cash_registers" ADD CONSTRAINT "FK_e68cc369da065432b260262a0b2" FOREIGN KEY ("current_open_session_id") REFERENCES "cash_register_sessions"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
       `ALTER TABLE "cash_movements" ADD CONSTRAINT "FK_0a089a2ba2ef40ca25185cf88ff" FOREIGN KEY ("store_id") REFERENCES "stores"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
@@ -691,6 +692,9 @@ export class InitSchema1753206965668 implements MigrationInterface {
       `ALTER TABLE "cash_movements" DROP CONSTRAINT "FK_0a089a2ba2ef40ca25185cf88ff"`,
     );
     await queryRunner.query(
+      `ALTER TABLE "cash_registers" DROP CONSTRAINT "FK_e68cc369da065432b260262a0b2"`,
+    );
+    await queryRunner.query(
       `ALTER TABLE "cash_registers" DROP CONSTRAINT "FK_0884e1723faa3908dc2c1c9edd7"`,
     );
     await queryRunner.query(
@@ -741,6 +745,7 @@ export class InitSchema1753206965668 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "stores"`);
     await queryRunner.query(`DROP INDEX "public"."IDX_a74e4d890b7799d91b68bcea16"`);
     await queryRunner.query(`DROP INDEX "public"."IDX_75bd6d443e647f6de95776a786"`);
+    await queryRunner.query(`DROP INDEX "public"."IDX_3757f1b7c87773d4e14c415f5a"`);
     await queryRunner.query(`DROP INDEX "public"."IDX_a793d7354d7c3aaf76347ee5a6"`);
     await queryRunner.query(`DROP TABLE "payment_methods"`);
     await queryRunner.query(`DROP INDEX "public"."IDX_12fd861c33c885f01b9a7da7d9"`);

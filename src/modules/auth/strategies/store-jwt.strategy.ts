@@ -43,20 +43,22 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: any) => {
-          // 1. Cookie
-          const cookieToken = req?.cookies?.['access_token'];
-          if (cookieToken) {
-            console.log('Access token (cookie):', cookieToken); // DEBUG
-            return cookieToken;
-          }
-
           // 2. Authorization header
           const authHeader = req?.headers?.authorization;
+          console.log(`hesder ⚠️⚠️⚠️⚠️⚠️⚠️⚠️extriare ${authHeader}`);
+
           if (authHeader && authHeader.startsWith('Bearer ')) {
             const headerToken = authHeader.slice(7);
             console.log('Access token (header):', headerToken); // DEBUG
+            console.log(`token ⚠️⚠️⚠️⚠️⚠️⚠️⚠️extriare ${headerToken}`);
             return headerToken;
           }
+          // // 1. Cookie
+          // const cookieToken = req?.cookies?.['access_token'];
+          // if (cookieToken) {
+          //   console.log('Access token (cookie):', cookieToken); // DEBUG
+          //   return cookieToken;
+          // }
 
           return null;
         },

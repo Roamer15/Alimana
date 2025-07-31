@@ -23,8 +23,8 @@
     "type-check": "tsc --noEmit",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:create": "npm run typeorm migration:create",
-    "migration:generate": "npm run typeorm migration:generate",
-    "migration:run": "typeorm-ts-node-commonjs -d ./dist/database/data-source.js migration:run",
+    "migration:generate": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate src/database/migrations/InitiaSchema",
+    "migration:run": "typeorm-ts-node-commonjs -d ./src/database/data-source.ts migration:run",
     "migration:revert": "typeorm-ts-node-commonjs -d ./dist/database/data-source.js migration:revert"
   },
   "dependencies": {
