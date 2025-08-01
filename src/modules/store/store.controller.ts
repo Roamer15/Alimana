@@ -60,7 +60,7 @@ export class StoreController {
       sameSite: 'strict',
     });
 
-    return { message: 'Store created successfully and session opened.', store };
+    return { message: 'Store created successfully and session opened.', store, accessToken };
   }
 
   /**

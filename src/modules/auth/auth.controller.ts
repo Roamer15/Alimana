@@ -263,7 +263,7 @@ export class AuthController {
 
     this.logger.log(`Tokens refreshed successfully`);
 
-    return { message: 'Tokens refreshed successfully' };
+    return { message: 'Tokens refreshed successfully', accessToken };
   }
 
   @Post('logout')

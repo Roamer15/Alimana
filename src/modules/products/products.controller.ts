@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseBoolPipe,
   ParseIntPipe,
   Patch,
   Post,
@@ -20,6 +19,14 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PermissionKeys } from '../auth/decorators/permissions.decorator';
 import { PermissionKey } from '../store/constants/permission-enum';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { Product } from 'src/entities/product.entity';
+import { ListProductsDto } from './dto/list-products.dto';
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
 
 @Controller('store/:storeId/product')
 export class ProductsController {
@@ -38,18 +45,11 @@ export class ProductsController {
   @Get()
   async listProducts(
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Query('page', ParseIntPipe) page?: number,
-    @Query('limit', ParseIntPipe) limit?: number,
-    @Query('search') search?: string,
-    @Query('categoryId', ParseIntPipe) categoryId?: number,
-    @Query('isActive', ParseBoolPipe) isActive?: boolean,
+    @Query() query: ListProductsDto,
   ) {
     return this.productsService.listProducts(storeId, {
-      page,
-      limit,
-      search,
-      categoryId,
-      isActive,
+      ...query,
+      isActive: true,
     });
   }
 
@@ -72,6 +72,28 @@ export class ProductsController {
     @Body() dto: UpdateProductDto,
   ) {
     return this.productsService.updateProduct(storeId, productId, dto);
+  }
+
+  /**
+   * Basculer le statut d'activité d'un produit.
+   * @returns ApiResponse avec le produit mis à jour.
+   */
+  @UseGuards(StoreJwtGuard, PermissionsGuard)
+  @PermissionKeys(PermissionKey.MANAGE_PRODUCTS)
+  @Patch(':productId/toggle-active')
+  async toggleActive(
+    @Param('productId', ParseIntPipe) productId: number,
+    @Param('storeId', ParseIntPipe) storeId: number,
+  ): Promise<ApiResponse<Product>> {
+    // Remplacez 1 par l'ID de la boutique de l'utilisateur authentifié
+
+    const updatedProduct = await this.productsService.toggleProductActive(storeId, productId);
+
+    return {
+      success: true,
+      data: updatedProduct,
+      message: `Produit "${updatedProduct.name}" a été ${updatedProduct.isActive ? 'activé' : 'désactivé'}.`,
+    };
   }
 
   @UseGuards(StoreJwtGuard, PermissionsGuard)

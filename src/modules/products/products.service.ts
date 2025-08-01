@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RequestContextService } from 'src/common/context/request-context/request-context.service';
 import { ErrorCode } from 'src/common/errors/error-codes.enum';
@@ -292,7 +292,18 @@ export class ProductsService {
       relations: ['category'],
     });
 
-    return { page, limit, total, items };
+    //  Calculer le nombre total de pages
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    };
   }
 
   /** Search Products */
@@ -319,5 +330,29 @@ export class ProductsService {
     });
 
     return products;
+  }
+  /**
+   * Basculer le statut d'activité d'un produit par son ID.
+   * @param storeId L'ID de la boutique pour valider l'accès.
+   * @param productId L'ID du produit à désactiver.
+   * @returns Le produit mis à jour.
+   */
+  async toggleProductActive(storeId: number, productId: number): Promise<Product> {
+    this.validateStoreAccess(storeId);
+
+    // 2. Chercher le produit
+    const product = await this.productRepo.findOne({
+      where: { id: productId, storeId: storeId },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Produit non trouvé.');
+    }
+
+    // 3. Basculer le statut isActive
+    product.isActive = !product.isActive;
+
+    // 4. Sauvegarder et retourner le produit mis à jour
+    return this.productRepo.save(product);
   }
 }
