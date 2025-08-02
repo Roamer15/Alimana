@@ -224,13 +224,29 @@ export class ProductsService {
           await this.assertCategoryValidity(dto.categoryId, storeId);
         }
 
+        let finalQuantity = product.quantityInStock;
+
+        if (dto.quantityInStock !== undefined) {
+          // Add to existing quantity
+          finalQuantity += dto.quantityInStock;
+          if (finalQuantity < 0) {
+            throwHttpError(ErrorCode.INVALID_QUANTITY, {
+              message: 'Resulting quantity cannot be negative',
+            });
+          }
+        }
         const finalBarcode = await this.resolveBarcode(
           dto.barcode ?? product.barcode,
           storeId,
           productId,
         );
 
-        const updated = { ...product, ...dto, barcode: finalBarcode };
+        const updated = {
+          ...product,
+          ...dto,
+          quantityInStock: finalQuantity,
+          barcode: finalBarcode,
+        };
         return await manager.getRepository(Product).save(updated);
       } catch (error) {
         if (error instanceof Error) {
