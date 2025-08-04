@@ -131,8 +131,8 @@ export class AuthController {
 
     this.logger.log(`new user Registrat or login successfuly from google userEmail: ${user.email}`);
 
-    // res.redirect('/dashboard');
-    return { message: 'Google login successful' };
+    res.redirect(`${process.env.FRONTEND_URL}/signin`);
+    // return { message: 'Google login successful' };
   }
 
   // --- 2. Authentification ---
