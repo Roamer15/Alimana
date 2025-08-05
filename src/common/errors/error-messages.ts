@@ -176,6 +176,10 @@ export const ErrorMessages: Record<ErrorCode, { message: string; status: HttpSta
     message: 'Failed to update product',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
   },
+  [ErrorCode.INVALID_QUANTITY]: {
+    message: 'Invalid quantity',
+    status: HttpStatus.CONFLICT,
+  },
   [ErrorCode.CATEGORY_NOT_FOUND]: {
     message: 'Category not found',
     status: HttpStatus.NOT_FOUND,

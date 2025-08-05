@@ -69,7 +69,7 @@ export class StoreController {
    */
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(StoreJwtGuard)
   async findStoreById(@Param('id', ParseIntPipe) id: number) {
     return this.storeService.findStoreById(id);
   }

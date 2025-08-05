@@ -76,7 +76,6 @@ export class AnalyticsService {
       .addSelect('SUM(item.quantity)', 'units_sold')
       .where('sale.storeId = :storeId', { storeId })
       .groupBy('product.name')
-      .orderBy('units_sold', 'DESC')
       .getRawMany();
   }
 
@@ -84,10 +83,11 @@ export class AnalyticsService {
     this.validateStoreAccess(storeId);
     return this.saleItemRepo
       .createQueryBuilder('item')
-      .select("DATE_TRUNC('day', item.saleDate)", 'day')
+      .leftJoin('item.sale', 'sale')
+      .select("DATE_TRUNC('day', sale.createdAt)", 'day')
       .addSelect('SUM(item.quantity)', 'total_units_sold')
-      .where('item.storeId = :storeId', { storeId })
-      .andWhere("item.saleDate >= CURRENT_DATE - INTERVAL '30 days'")
+      .where('sale.storeId = :storeId', { storeId })
+      .andWhere("sale.createdAt >= CURRENT_DATE - INTERVAL '30 days'")
       .groupBy('day')
       .orderBy('day')
       .getRawMany();
@@ -98,9 +98,10 @@ export class AnalyticsService {
     return this.saleItemRepo
       .createQueryBuilder('item')
       .leftJoin('item.product', 'product')
+      .leftJoin('item.sale', 'sale')
       .select('product.name', 'product')
       .addSelect('SUM(item.quantity)', 'units_sold')
-      .where('item.storeId = :storeId', { storeId })
+      .where('sale.storeId = :storeId', { storeId })
       .groupBy('product.name')
       .orderBy('units_sold', 'DESC')
       .limit(10)
