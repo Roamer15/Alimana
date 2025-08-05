@@ -19,13 +19,57 @@ import { getDefaultStoreSettings } from './constants/store-default-settings';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { AuthService } from '../auth/auth.service';
 import { RequestContextService } from 'src/common/context/request-context/request-context.service';
+import { IsEmail, IsOptional, IsString, IsUrl, Length, Matches } from 'class-validator';
 
 // DTO pour la mise à jour de boutique
 export class UpdateStoreDto {
-  name?: string;
+  @IsOptional()
+  @IsString()
+  @Length(2, 255)
+  @Matches(/^[\p{L}0-9\s\-_,.']+$/u, {
+    message: 'The store name contains unauthorized characters.',
+  })
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 255)
+  @Matches(/^[\p{L}0-9\s\-_,.']*$/u, {
+    message: 'The description contains unauthorized characters.',
+  })
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 255)
+  @Matches(/^[\p{L}0-9\s\-_,.'/#]*$/u, {
+    message: 'The address contains unauthorized characters.',
+  })
   address?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Le numéro de téléphone doit être une chaîne de caractères.' })
+  // Regex pour un format de téléphone international (ex: +1234567890, ou 06XXXXXXXX)
+  @Matches(/^\+?[1-9]\d{1,14}$|^0\d{9}$/, {
+    message: 'The phone number must be a valid phone number.',
+  })
   phone?: string;
+
+  @IsOptional()
+  @IsEmail({}, { message: 'Invalid email address.' })
+  email?: string;
+
+  @IsOptional()
+  @IsUrl({}, { message: 'Invalid logo URL.' })
+  logoUrl?: string;
+
+  @IsOptional()
+  @IsUrl({}, { message: 'Invalid profile Image URL.' })
+  profileImageUrl?: string;
+
+  @IsOptional()
+  @IsUrl({}, { message: 'Invalid website URL.' })
+  websiteUrl?: string;
 }
 
 // --- NEW CONSTANT: Define your default payment methods here ---
