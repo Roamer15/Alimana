@@ -20,6 +20,7 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { AuthService } from '../auth/auth.service';
 import { RequestContextService } from 'src/common/context/request-context/request-context.service';
 import { IsEmail, IsOptional, IsString, IsUrl, Length, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 // DTO pour la mise à jour de boutique
 export class UpdateStoreDto {
@@ -68,6 +69,9 @@ export class UpdateStoreDto {
   profileImageUrl?: string;
 
   @IsOptional()
+  @IsString()
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUrl({}, { message: 'Invalid website URL.' })
   websiteUrl?: string;
 }
@@ -339,6 +343,7 @@ export class StoreService {
    * @returns The updated store.
    */
   async updateStore(id: number, updateStoreDto: UpdateStoreDto): Promise<Store> {
+    console.log(updateStoreDto);
     const { userId, storeId: contextStoreId } = this.requestContextService.getContext();
 
     if (!userId || !contextStoreId) {
