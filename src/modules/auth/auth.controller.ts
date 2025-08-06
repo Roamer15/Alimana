@@ -8,6 +8,8 @@ import {
   Req,
   Get,
   HttpCode,
+  SerializeOptions,
+  Patch,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -22,6 +24,10 @@ import { throwHttpError } from 'src/common/errors/http-exception.helper';
 import { ErrorCode } from 'src/common/errors/error-codes.enum';
 import { MyLoggerService } from '../../my-logger/my-logger.service';
 import { RequestContextService } from 'src/common/context/request-context/request-context.service';
+import { UserProfileDto } from './dto/user-profile.dto';
+import { plainToInstance } from 'class-transformer';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 // --- Interfaces pour la typage des payloads JWT et des requêtes
 
@@ -131,8 +137,8 @@ export class AuthController {
 
     this.logger.log(`new user Registrat or login successfuly from google userEmail: ${user.email}`);
 
-    // res.redirect('/dashboard');
-    return { message: 'Google login successful' };
+    res.redirect(`${process.env.FRONTEND_URL}/signin`);
+    // return { message: 'Google login successful' };
   }
 
   // --- 2. Authentification ---
@@ -198,7 +204,6 @@ export class AuthController {
     );
     const accessTokenExpirationMs = this.configService.jwtAccesTokenExpirationMs;
     const refreshTokenExpirationMs = this.configService.jwtRefrehTokenExpirationMs;
-    console.log(`selectStore function :accessToken genere apres selection: ${accessToken} `);
 
     // Supprime d'abord les cookies avant de les remettre à jour
     // res.clearCookie('access_token', {
@@ -263,7 +268,7 @@ export class AuthController {
 
     this.logger.log(`Tokens refreshed successfully`);
 
-    return { message: 'Tokens refreshed successfully' };
+    return { message: 'Tokens refreshed successfully', accessToken };
   }
 
   @Post('logout')
@@ -304,5 +309,42 @@ export class AuthController {
   @UseGuards(StoreJwtGuard)
   getStoreDashboard(@Req() req: StoreJwtAuthRequest) {
     return req.user; // Contient { userId, storeUserId, storeId, roleId, roleName, permissions }
+  }
+
+  /**
+   * Endpoint pour récupérer le profil complet de l'utilisateur connecté.
+   * Nécessite une authentification JWT.
+   *
+   * @param req L'objet de requête contenant l'utilisateur authentifié.
+   * @returns Le profil utilisateur complet avec ses affiliations aux magasins et ses rôles.
+   */
+  @Get('profile/me')
+  @UseGuards(JwtAuthGuard)
+  @SerializeOptions({
+    groups: ['me'],
+    excludeExtraneousValues: true, // Important pour n'exposer que les propriétés décorées par @Expose
+  })
+  async getMyProfile(@Req() req: JwtAuthRequest): Promise<UserProfileDto> {
+    const user = req.user;
+    const userWithRelations = await this.authService.findOneWithRelations(user.userId);
+
+    // Transforme l'entité User en DTO pour formater la réponse
+    return plainToInstance(UserProfileDto, userWithRelations);
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(@Req() req: JwtAuthRequest, @Body() updateUserDto: Partial<UpdateUserDto>) {
+    return await this.authService.update(req.user.userId, updateUserDto);
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @Req() req: JwtAuthRequest,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    await this.authService.changePassword(req.user.userId, dto);
+    return { message: 'Mot de passe modifié avec succès' };
   }
 }
