@@ -26,6 +26,7 @@ import { InvitationModule } from './modules/invitation/invitation.module';
 import { PaymentMethodModule } from './modules/payment-method/payment-method.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { CloudinaryModule } from './common/cloudinary/cloudinary.module';
 // Importez votre middleware de payload
 
 @Module({
@@ -80,6 +81,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     CategoryModule,
     AnalyticsModule,
     ReportsModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

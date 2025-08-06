@@ -45,20 +45,14 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
         (req: any) => {
           // 2. Authorization header
           const authHeader = req?.headers?.authorization;
-          console.log(`hesder ⚠️⚠️⚠️⚠️⚠️⚠️⚠️extriare ${authHeader}`);
+          // console.log(`hesder ⚠️⚠️⚠️⚠️⚠️⚠️⚠️extriare ${authHeader}`);
 
           if (authHeader && authHeader.startsWith('Bearer ')) {
             const headerToken = authHeader.slice(7);
             console.log('Access token (header):', headerToken); // DEBUG
-            console.log(`token ⚠️⚠️⚠️⚠️⚠️⚠️⚠️extriare ${headerToken}`);
+            // console.log(`token ⚠️⚠️⚠️⚠️⚠️⚠️⚠️extriare ${headerToken}`);
             return headerToken;
           }
-          // // 1. Cookie
-          // const cookieToken = req?.cookies?.['access_token'];
-          // if (cookieToken) {
-          //   console.log('Access token (cookie):', cookieToken); // DEBUG
-          //   return cookieToken;
-          // }
 
           return null;
         },
@@ -66,24 +60,6 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
       ignoreExpiration: false,
       secretOrKey: jwtSecret,
     });
-
-    // super({
-    //   jwtFromRequest: ExtractJwt.fromExtractors([
-    //     (request: any) => {
-    //       // Utilisation de 'any' ici pour l'objet request d'Express
-    //       let token: string | null = null;
-    //       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    //       if (request && request.cookies) {
-    //         console.log('Access token (cookie):', token); // DEBUG
-    //         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    //         token = request.cookies['access_token'] as string; // Utilise 'access_token' car c'est le token mis à jour après selectStore
-    //       }
-    //       return token;
-    //     },
-    //   ]),
-    //   ignoreExpiration: false,
-    //   secretOrKey: jwtSecret,
-    // });
   }
 
   /**
