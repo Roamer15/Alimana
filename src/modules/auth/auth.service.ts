@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm'; //décorateur de TypeORM pour injecter un dépôt (Repository) d'entité spécifique.
 import { Repository } from 'typeorm'; //fournit des méthodes pour interagir avec la base de données (enregistrer, trouver, supprimer des entités).
 import * as bcrypt from 'bcrypt';
@@ -17,6 +22,8 @@ import { Profile } from 'passport-google-oauth20';
 import { Request } from 'express';
 import { RequestContextService } from 'src/common/context/request-context/request-context.service';
 import { MyLoggerService } from 'src/my-logger/my-logger.service';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -390,5 +397,70 @@ export class AuthService {
       token.revoked = true;
       await this.userRefreshTokensRepository.save(token);
     }
+  }
+
+  /**
+   * Finds a user by ID and retrieves all their related information,
+   * including stores they belong to and their roles.
+   *
+   * @param userId The ID of the authenticated user.
+   * @returns A promise that resolves to the user entity with all its relations.
+   */
+  async findOneWithRelations(userId: number): Promise<User> {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: {
+        storeUsers: {
+          store: true, // Charge les détails du magasin pour chaque StoreUser
+          role: true, // Charge les détails du rôle pour chaque StoreUser
+        },
+        stores: true, // Charge les magasins dont l'utilisateur est propriétaire
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found.`);
+    }
+
+    // Ajoute le rôle du magasin actuellement sélectionné à l'objet utilisateur
+    if (user.lastSelectedStoreUserId) {
+      const currentStoreUser = user.storeUsers.find((su) => su.id === user.lastSelectedStoreUserId);
+      if (currentStoreUser && currentStoreUser.role) {
+        // Ajoute la propriété 'currentStoreRole' qui sera utilisée par le DTO
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        (user as any).currentStoreRole = currentStoreUser.role;
+      }
+    }
+
+    return user;
+  }
+
+  // async update(userId: number, updateUserDto: UpdateUserDto) {
+  //   await this.usersRepository.update(userId, updateUserDto);
+  //   return this.usersRepository.findOne({ where: { id: userId } });
+  // }
+
+  async update(userId: number, updateData: Partial<UpdateUserDto>) {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+
+    Object.assign(user, updateData); // applique seulement les champs fournis
+    return this.usersRepository.save(user);
+  }
+
+  async changePassword(userId: number, dto: ChangePasswordDto): Promise<void> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('Le mot de passe actuel est incorrect');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+    user.password = hashedPassword;
+    await this.usersRepository.save(user);
   }
 }

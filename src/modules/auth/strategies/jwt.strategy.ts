@@ -40,10 +40,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
           if (request?.cookies?.access_token) {
             token = request.cookies.access_token;
-            console.debug(`[JwtStrategy] Token extrait du cookie: ${token}`);
           } else if (request?.headers?.authorization?.startsWith('Bearer ')) {
             token = request.headers.authorization.split(' ')[1];
-            console.debug(`[JwtStrategy] Token extrait du header Authorization: ${token}`);
           } else {
             console.warn(
               '[JwtStrategy] Aucun token JWT trouvé ni dans le cookie ni dans le header Authorization',
@@ -58,18 +56,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JwtPayload): Promise<JwtPayload> {
-    console.debug(`[JwtStrategy] Validation du payload JWT:`, payload);
-
     const user = await this.usersRepository.findOne({ where: { id: payload.userId } });
 
     if (!user) {
-      console.warn(`[JwtStrategy] Aucun utilisateur trouvé avec l'ID ${payload.userId}`);
       throwHttpError(ErrorCode.INVALID_CREDENTIALS, {
         reason: 'User not found based on JWT payload.',
       });
     }
-
-    console.debug(`[JwtStrategy] Utilisateur validé: ID ${user.id}, email ${user.email}`);
 
     return {
       userId: payload.userId,

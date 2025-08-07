@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsInt,
@@ -35,24 +36,26 @@ export class CreateProductDto {
   unit: string;
 
   @IsNumber()
-  @IsNotEmpty()
   @Min(0)
+  @Type(() => Number)
   sellingPrice: number;
 
   @IsNumber()
-  @IsNotEmpty()
   @Min(0)
+  @Type(() => Number)
   costPrice: number;
 
   @IsNumber()
-  @IsOptional()
   @Min(0)
   @Max(100)
+  @IsOptional()
+  @Type(() => Number)
   discountPercentage: number;
 
   @IsInt()
   @IsNotEmpty()
   @Min(0)
+  @Type(() => Number)
   quantityInStock: number;
 
   @IsString()
@@ -65,5 +68,6 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsInt()
+  @Type(() => Number)
   categoryId: number;
 }

@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StoreUser, StoreUserStatus } from '../../entities/store-user.entity';
 import { Store } from 'src/entities/store.entity';
@@ -227,16 +232,6 @@ export class StoreService {
           'StoreService',
         );
 
-        // 6. Méthode de paiement par défaut pour la nouvelle boutique créée
-        // defaultPaymentMethod = manager.getRepository(PaymentMethod).create({
-        //   // Correction nom variable
-        //   name: 'cash',
-        //   type: PaymentMethodType.CASH,
-        //   isActive: true,
-        //   isDefault: true,
-        //   storeId: newStore.id,
-        // });
-
         const paymentMethodsToCreate = DEFAULT_PAYMENT_METHODS.map((method) =>
           manager.getRepository(PaymentMethod).create({
             ...method,
@@ -450,5 +445,30 @@ export class StoreService {
     // });
 
     return true;
+  }
+
+  /**
+   * Finds a store by ID and retrieves all its related information,
+   * including all users affiliated with it and their roles.
+   *
+   * @param storeId The ID of the store.
+   * @returns A promise that resolves to the store entity with all its relations.
+   */
+  async findOneWithRelations(storeId: number): Promise<Store> {
+    const store = await this.storeRepository.findOne({
+      where: { id: storeId },
+      relations: {
+        storeUsers: {
+          user: true, // Charge les détails de l'utilisateur pour chaque StoreUser
+          role: true, // Charge les détails du rôle pour chaque StoreUser
+        },
+      },
+    });
+
+    if (!store) {
+      throw new NotFoundException(`Store with ID "${storeId}" not found.`);
+    }
+
+    return store;
   }
 }

@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Res,
+  SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
 import { StoreService, UpdateStoreDto } from './store.service';
@@ -22,6 +23,8 @@ import { MyLoggerService } from 'src/my-logger/my-logger.service';
 import { PermissionKeys } from '../auth/decorators/permissions.decorator'; // Utilisé pour les permissions
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PermissionKey } from './constants/permission-enum';
+import { plainToInstance } from 'class-transformer';
+import { StoreProfileDto } from './dto/store-profile.dto';
 @Controller('store')
 export class StoreController {
   constructor(
@@ -60,7 +63,7 @@ export class StoreController {
       sameSite: 'strict',
     });
 
-    return { message: 'Store created successfully and session opened.', store };
+    return { message: 'Store created successfully and session opened.', store, accessToken };
   }
 
   /**
@@ -96,5 +99,25 @@ export class StoreController {
   async deleteStore(@Param('id', ParseIntPipe) id: number) {
     await this.storeService.deleteStore(id);
     return { message: 'successfully Delete store' };
+  }
+
+  /**
+   * GET /stores/:id
+   * Endpoint pour récupérer le profil complet d'un magasin par son ID.
+   * Nécessite une authentification JWT.
+   *
+   * @param storeId L'ID du magasin.
+   * @returns Le profil complet du magasin avec ses utilisateurs et leurs rôles.
+   */
+  @Get('profile/:id')
+  @UseGuards(JwtAuthGuard)
+  @SerializeOptions({
+    excludeExtraneousValues: true,
+  })
+  async getStoreProfile(@Param('id', ParseIntPipe) storeId: number): Promise<StoreProfileDto> {
+    const storeWithRelations = await this.storeService.findOneWithRelations(storeId);
+
+    // Transforme l'entité Store en DTO pour formater la réponse
+    return plainToInstance(StoreProfileDto, storeWithRelations);
   }
 }
