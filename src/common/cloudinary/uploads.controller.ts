@@ -23,7 +23,7 @@ export class CloudinaryController {
     const folderName = folder?.trim() || 'misc';
 
     // Optionnel : contrôle des dossiers autorisés
-    const allowedFolders = ['products', 'profiles', 'avatars', 'categories'];
+    const allowedFolders = ['products', 'profiles', 'avatars', 'store'];
     if (!allowedFolders.includes(folderName)) {
       throw new BadRequestException(`Unauthorized file: ${folderName}`);
     }
