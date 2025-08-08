@@ -16,7 +16,12 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter(logger));
 
   app.enableCors({
-    origin: ['http://localhost:3001', 'https://alimana-gules.vercel.app', 'https://alimana.cc'],
+    origin: [
+      'http://localhost:3001', // Local development
+      'https://alimana-gules.vercel.app', // Vercel preview URL
+      'https://www.alimana.cc', // Primary domain (with www)
+      'https://alimana.cc', // Root domain
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
