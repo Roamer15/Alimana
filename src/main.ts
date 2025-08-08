@@ -41,7 +41,8 @@ async function bootstrap() {
   //   credentials: true, // Permet l'envoi de cookies et d'en-têtes d'autorisation
   // });
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
 
   process.on('SIGTERM', () => {
     void (async () => {
