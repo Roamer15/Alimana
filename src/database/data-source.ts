@@ -10,7 +10,7 @@ export const AppDataSource = new DataSource({
   type: 'postgres',
   url: databaseUrl,
   ssl: {
-    rejectUnauthorized: false, // required for most hosted providers like Koyeb
+    rejectUnauthorized: true, // required for most hosted providers like Koyeb
   },
   entities: isTsEnv ? ['src/entities/**/*.entity.ts'] : ['dist/entities/**/*.entity.js'],
   migrations: isTsEnv ? ['src/database/migrations/**/*.ts'] : ['dist/database/migrations/**/*.js'],
