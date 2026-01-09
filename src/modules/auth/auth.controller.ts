@@ -156,7 +156,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(accessTokenExpirationMs),
-      domain: 'localhost',
+      // domain: 'localhost',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
     });
@@ -164,7 +164,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: Number(refreshTokenExpirationMs),
-      domain: 'localhost',
+      // domain: 'localhost',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
     });
