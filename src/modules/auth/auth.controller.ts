@@ -29,80 +29,175 @@ import { plainToInstance } from 'class-transformer';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
-// --- Interfaces pour la typage des payloads JWT et des requêtes
+// =============================================================================
+// INTERFACES
+// =============================================================================
 
-// Payload pour le JWT global de l'utilisateur
 interface UserJwtPayload {
-  userId: number; // userId
+  userId: number;
   email: string;
   canCreateStore: boolean;
 }
 
-// Payload pour le JWT spécifique à la boutique
 export interface StoreUserJwtPayload {
-  userId: number; // userId
+  userId: number;
   email: string;
   canCreateStore: boolean;
   storeUserId: number;
   storeId: number;
   roleId: number;
   roleName: string;
-  permissions: string[]; // Exemple: tableau de noms de permissions
+  permissions: string[];
 }
 
-// Interfaces pour étendre l'objet Request d'Express avec des types de 'user' spécifiques
 interface LocalAuthRequest extends ExpressRequest {
-  user: User; // Après LocalStrategy, req.user est l'entité User
+  user: User;
 }
 
 interface GoogleAuthRequest extends ExpressRequest {
-  user: User; // Après GoogleStrategy, req.user est l'entité User
+  user: User;
 }
 
 interface JwtAuthRequest extends ExpressRequest {
-  user: UserJwtPayload; // Après JwtAuthGuard, req.user est le payload du token global
+  user: UserJwtPayload;
 }
 
 interface StoreJwtAuthRequest extends ExpressRequest {
-  user: StoreUserJwtPayload; // Après StoreJwtGuard, req.user est le payload du token de boutique
+  user: StoreUserJwtPayload;
 }
+
+// =============================================================================
+// COOKIE CONFIGURATION TYPE
+// =============================================================================
+
+interface CookieOptions {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: 'strict' | 'lax' | 'none';
+  domain?: string;
+  path: string;
+  maxAge: number;
+}
+
+// =============================================================================
+// CONTROLLER
+// =============================================================================
 
 @Controller('auth')
 export class AuthController {
+  // Configuration centralisée
+  private readonly isProduction: boolean;
+  private readonly frontendUrl: string;
+  private readonly cookieDomain: string | undefined;
+
   constructor(
     private authService: AuthService,
     private configService: AppConfigService,
     private logger: MyLoggerService,
     private readonly requestContextService: RequestContextService,
-  ) {}
+  ) {
+    this.isProduction = process.env.NODE_ENV === 'production';
+    this.frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
 
-  // --- 1. Création de compte ---
+    // ✅ IMPORTANT: Cookie domain pour partage entre alimana.cc et api.alimana.cc
+    // Le point devant (.alimana.cc) permet le partage avec tous les sous-domaines
+    this.cookieDomain =
+      process.env.COOKIE_DOMAIN || (this.isProduction ? '.alimana.cc' : undefined);
+
+    this.logger.log(
+      `AuthController initialized - Production: ${this.isProduction}, Frontend: ${this.frontendUrl}, Cookie Domain: ${this.cookieDomain}`,
+    );
+  }
+
+  // ===========================================================================
+  // HELPER: Configuration des cookies
+  // ===========================================================================
+
+  /**
+   * Génère la configuration des cookies d'authentification
+   * Centralisé pour éviter les incohérences
+   */
+  private getCookieOptions(maxAge: number): CookieOptions {
+    const options: CookieOptions = {
+      httpOnly: true, // ✅ Protection XSS
+      secure: this.isProduction, // ✅ HTTPS only en prod
+      sameSite: this.isProduction ? 'lax' : 'lax', // ✅ 'lax' pour même domaine racine
+      path: '/',
+      maxAge,
+    };
+
+    // ✅ CRUCIAL: Ajoute le domain pour le partage cross-subdomain
+    if (this.cookieDomain) {
+      options.domain = this.cookieDomain;
+    }
+
+    return options;
+  }
+
+  /**
+   * Définit les cookies d'authentification (access + refresh)
+   */
+  private setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
+    const accessMaxAge = Number(this.configService.jwtAccesTokenExpirationMs);
+    const refreshMaxAge = Number(this.configService.jwtRefrehTokenExpirationMs);
+
+    res.cookie('access_token', accessToken, this.getCookieOptions(accessMaxAge));
+    res.cookie('refresh_token', refreshToken, this.getCookieOptions(refreshMaxAge));
+
+    this.logger.log(`Auth cookies set with domain: ${this.cookieDomain || 'default'}`);
+  }
+
+  /**
+   * Efface tous les cookies d'authentification
+   */
+  private clearAuthCookies(res: Response): void {
+    const clearOptions = {
+      httpOnly: true,
+      secure: this.isProduction,
+      sameSite: 'lax' as const,
+      path: '/',
+      ...(this.cookieDomain && { domain: this.cookieDomain }),
+    };
+
+    res.clearCookie('access_token', clearOptions);
+    res.clearCookie('refresh_token', clearOptions);
+    res.clearCookie('store_access_token', clearOptions);
+
+    this.logger.log('Auth cookies cleared');
+  }
+
+  // ===========================================================================
+  // REGISTER
+  // ===========================================================================
+
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const user = await this.authService.registerLocal(registerDto);
     const { accessToken, refreshToken } = await this.authService.generateTokens(user);
 
-    const accessTokenExpirationMs = this.configService.jwtAccesTokenExpirationMs;
-    const refreshTokenExpirationMs = this.configService.jwtRefrehTokenExpirationMs;
+    // ✅ Set cookies avec la bonne configuration
+    this.setAuthCookies(res, accessToken, refreshToken);
 
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: Number(accessTokenExpirationMs),
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: Number(refreshTokenExpirationMs),
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
+    this.logger.log(`New user registered: ${user.email}`);
 
-    this.logger.log(`new user Registration successful userEmail: ${user.email}`);
-
-    return { message: 'Registration successful' };
+    // ✅ Retourne aussi les tokens dans le body (backup cross-domain)
+    return {
+      message: 'Registration successful',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        canCreateStore: user.canCreateStore,
+      },
+    };
   }
+
+  // ===========================================================================
+  // GOOGLE OAUTH
+  // ===========================================================================
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
@@ -114,71 +209,70 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleAuthCallback(
     @Req() req: GoogleAuthRequest,
-    @Res({ passthrough: true }) res: Response,
+    @Res() res: Response, // Note: pas passthrough car on fait un redirect
   ) {
-    const user = req.user; // User est maintenant correctement typé
+    const user = req.user;
     const { accessToken, refreshToken } = await this.authService.generateTokens(user);
 
-    const accessTokenExpirationMs = this.configService.jwtAccesTokenExpirationMs;
-    const refreshTokenExpirationMs = this.configService.jwtRefrehTokenExpirationMs;
+    // ✅ Set cookies avec la bonne configuration
+    this.setAuthCookies(res, accessToken, refreshToken);
 
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: Number(accessTokenExpirationMs),
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: Number(refreshTokenExpirationMs),
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
+    this.logger.log(`User authenticated via Google: ${user.email}`);
 
-    this.logger.log(`new user Registrat or login successfuly from google userEmail: ${user.email}`);
+    // ✅ Détermine si c'est un nouvel utilisateur (créé dans les 60 dernières secondes)
+    const isNewUser =
+      user.createdAt && new Date().getTime() - new Date(user.createdAt).getTime() < 60000;
 
-    res.redirect(`${process.env.FRONTEND_URL}/signin`);
-    // return { message: 'Google login successful' };
+    // ✅ Redirect vers la bonne page selon le type d'utilisateur
+    // Option 1: Redirect simple (les cookies sont déjà set)
+    if (isNewUser) {
+      res.redirect(`${this.frontendUrl}/create-store`);
+    } else {
+      res.redirect(`${this.frontendUrl}/select-store`);
+    }
+
+    // Option 2 (alternative): Passer les tokens via URL si les cookies ne marchent pas
+    // const redirectUrl = new URL('/auth/callback', this.frontendUrl);
+    // redirectUrl.searchParams.set('accessToken', accessToken);
+    // redirectUrl.searchParams.set('refreshToken', refreshToken);
+    // redirectUrl.searchParams.set('isNewUser', String(isNewUser));
+    // res.redirect(redirectUrl.toString());
   }
 
-  // --- 2. Authentification ---
+  // ===========================================================================
+  // LOGIN
+  // ===========================================================================
+
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('local')) // Utilise la stratégie locale pour la connexion username/password
+  @UseGuards(AuthGuard('local'))
   async login(@Req() req: LocalAuthRequest, @Res({ passthrough: true }) res: Response) {
-    const user = req.user; // User est maintenant correctement typé
+    const user = req.user;
     const { accessToken, refreshToken } = await this.authService.generateTokens(user);
 
-    const accessTokenExpirationMs = this.configService.jwtAccesTokenExpirationMs;
-    const refreshTokenExpirationMs = this.configService.jwtRefrehTokenExpirationMs;
+    // ✅ Set cookies avec la bonne configuration
+    this.setAuthCookies(res, accessToken, refreshToken);
 
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: Number(accessTokenExpirationMs),
-      // domain: 'localhost',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      path: '/',
-    });
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: Number(refreshTokenExpirationMs),
-      // domain: 'localhost',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      path: '/',
-    });
-    this.logger.log(`Access_token: ${accessToken}, Refresh_token: ${refreshToken}`);
+    this.logger.log(`User logged in: ${user.email}`);
 
-    this.logger.log(` user  login successfuly from google userEmail: ${user.email}`);
-
-    return { message: 'Login successful' };
+    // ✅ Retourne aussi les tokens dans le body (backup cross-domain)
+    return {
+      message: 'Login successful',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        canCreateStore: user.canCreateStore,
+      },
+    };
   }
 
-  /**
-   * Récupère la liste de toutes les boutiques où l'utilisateur est un StoreUser actif.
-   * Cette route est accessible après une authentification globale (JwtAuthGuard).
-   */
+  // ===========================================================================
+  // MY STORES
+  // ===========================================================================
+
   @Get('my-stores')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -188,147 +282,124 @@ export class AuthController {
     return { stores };
   }
 
-  // --- 4. Sélection de boutique ---
+  // ===========================================================================
+  // SELECT STORE
+  // ===========================================================================
+
   @Post('select-store')
-  @UseGuards(JwtAuthGuard) // L'utilisateur doit être authentifié globalement en premier
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async selectStore(
-    @Req() req: JwtAuthRequest, // req.user est maintenant UserJwtPayload
+    @Req() req: JwtAuthRequest,
     @Body() selectStoreDto: SelectStoreDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const userId = req.user.userId; // Accès sécurisé à l'ID utilisateur depuis le payload JWT
+    const userId = req.user.userId;
     const { accessToken, refreshToken } = await this.authService.selectStore(
       userId,
       selectStoreDto.storeUserId,
     );
-    const accessTokenExpirationMs = this.configService.jwtAccesTokenExpirationMs;
-    const refreshTokenExpirationMs = this.configService.jwtRefrehTokenExpirationMs;
 
-    // Supprime d'abord les cookies avant de les remettre à jour
-    // res.clearCookie('access_token', {
-    //   httpOnly: true,
-    //   secure: false,
-    //   sameSite: 'lax',
-    //   path: '/',
-    // });
+    // ✅ Set cookies avec la bonne configuration
+    this.setAuthCookies(res, accessToken, refreshToken);
 
-    // Mettre à jour les cookies avec les nouveaux tokens (le store_access_token est le nouveau access_token)
-    res.cookie('access_token', accessToken, {
-      // Mettre à jour le token global
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: Number(accessTokenExpirationMs),
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
-    res.cookie('refresh_token', refreshToken, {
-      // Mettre à jour le refresh token
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: Number(refreshTokenExpirationMs),
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
+    this.logger.log(`User ${userId} selected store ${selectStoreDto.storeUserId}`);
 
-    this.logger.log(
-      `user : ${userId} successfully connect to the store ${selectStoreDto.storeUserId}`,
-    );
-    return { message: 'Store selected successfully', accessToken };
+    // ✅ Retourne aussi le token dans le body
+    return {
+      message: 'Store selected successfully',
+      accessToken,
+      refreshToken,
+    };
   }
 
-  // --- 6. Refresh Token ---
+  // ===========================================================================
+  // REFRESH TOKEN
+  // ===========================================================================
+
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@Req() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
+  async refresh(
+    @Req() req: ExpressRequest,
+    @Body() body: { refreshToken?: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // ✅ Accepte le refresh token depuis le cookie OU le body (flexibilité)
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const refreshToken = req.cookies?.['refresh_token']; // Accès sécurisé aux cookies
+    const refreshToken = req.cookies?.['refresh_token'] || body.refreshToken;
+
     if (!refreshToken || typeof refreshToken !== 'string') {
       throwHttpError(ErrorCode.INVALID_CREDENTIALS, {
-        reason: 'Jeton de rafraîchissement non trouvé ou invalide.',
+        reason: 'Refresh token not found or invalid.',
       });
     }
 
     const { accessToken, refreshToken: newRefreshToken } =
       await this.authService.refreshTokens(refreshToken);
 
-    const accessTokenExpirationMs = this.configService.jwtAccesTokenExpirationMs;
-    const refreshTokenExpirationMs = this.configService.jwtRefrehTokenExpirationMs;
+    // ✅ Set cookies avec la bonne configuration
+    this.setAuthCookies(res, accessToken, newRefreshToken);
 
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: Number(accessTokenExpirationMs),
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
-    res.cookie('refresh_token', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: Number(refreshTokenExpirationMs),
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
+    this.logger.log('Tokens refreshed successfully');
 
-    this.logger.log(`Tokens refreshed successfully`);
-
-    return { message: 'Tokens refreshed successfully', accessToken };
+    // ✅ Retourne aussi les tokens dans le body
+    return {
+      message: 'Tokens refreshed successfully',
+      accessToken,
+      refreshToken: newRefreshToken,
+    };
   }
+
+  // ===========================================================================
+  // LOGOUT
+  // ===========================================================================
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Req() req: ExpressRequest,
+    @Body() body: { refreshToken?: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // ✅ Accepte le refresh token depuis le cookie OU le body
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const refreshToken = req.cookies?.['refresh_token']; // Accès sécurisé aux cookies
+    const refreshToken = req.cookies?.['refresh_token'] || body.refreshToken;
+
     if (refreshToken && typeof refreshToken === 'string') {
       await this.authService.logout(refreshToken);
     }
-    res.clearCookie('access_token', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
-    res.clearCookie('refresh_token', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
-    // dans la messure ou j'utiliser deux token!!!!
-    res.clearCookie('store_access_token', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    });
+
+    // ✅ Efface tous les cookies avec la bonne configuration
+    this.clearAuthCookies(res);
+
     return { message: 'Logged out successfully' };
   }
+
+  // ===========================================================================
+  // USER PROFILE ENDPOINTS
+  // ===========================================================================
 
   @Get('user/me')
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: JwtAuthRequest) {
-    return req.user; // Contient { sub (userId), email, canCreateStore }
+    return req.user;
   }
 
-  // route protégée utilisant le jeton d'accès spécifique à la boutique
   @Get('store/me')
   @UseGuards(StoreJwtGuard)
   getStoreDashboard(@Req() req: StoreJwtAuthRequest) {
-    return req.user; // Contient { userId, storeUserId, storeId, roleId, roleName, permissions }
+    return req.user;
   }
 
-  /**
-   * Endpoint pour récupérer le profil complet de l'utilisateur connecté.
-   * Nécessite une authentification JWT.
-   *
-   * @param req L'objet de requête contenant l'utilisateur authentifié.
-   * @returns Le profil utilisateur complet avec ses affiliations aux magasins et ses rôles.
-   */
   @Get('profile/me')
   @UseGuards(JwtAuthGuard)
   @SerializeOptions({
     groups: ['me'],
-    excludeExtraneousValues: true, // Important pour n'exposer que les propriétés décorées par @Expose
+    excludeExtraneousValues: true,
   })
   async getMyProfile(@Req() req: JwtAuthRequest): Promise<UserProfileDto> {
     const user = req.user;
     const userWithRelations = await this.authService.findOneWithRelations(user.userId);
-
-    // Transforme l'entité User en DTO pour formater la réponse
     return plainToInstance(UserProfileDto, userWithRelations);
   }
 
@@ -345,6 +416,6 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
   ): Promise<{ message: string }> {
     await this.authService.changePassword(req.user.userId, dto);
-    return { message: 'Mot de passe modifié avec succès' };
+    return { message: 'Password changed successfully' };
   }
 }

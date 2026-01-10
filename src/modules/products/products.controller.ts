@@ -91,7 +91,9 @@ export class ProductsController {
 
     return {
       success: true,
+
       data: updatedProduct,
+
       message: `Produit "${updatedProduct.name}" a été ${updatedProduct.isActive ? 'activé' : 'désactivé'}.`,
     };
   }
@@ -109,7 +111,7 @@ export class ProductsController {
   @Get('all')
   @HttpCode(HttpStatus.OK)
   @PermissionKeys(PermissionKey.MANAGE_PRODUCTS)
-  async findAllProducts(@Param('storeId', ParseIntPipe) storeId: number) {
+  findAllProducts(@Param('storeId', ParseIntPipe) storeId: number) {
     return this.productsService.findAllProductsForStore(storeId);
   }
 }
