@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Controller,
   Post,
@@ -10,6 +11,7 @@ import {
   HttpCode,
   SerializeOptions,
   Patch,
+  // Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -29,9 +31,7 @@ import { plainToInstance } from 'class-transformer';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
-// =============================================================================
-// INTERFACES
-// =============================================================================
+// --- Interfaces pour la typage des payloads JWT et des requêtes ---
 
 interface UserJwtPayload {
   userId: number;
@@ -67,25 +67,19 @@ interface StoreJwtAuthRequest extends ExpressRequest {
 }
 
 // =============================================================================
-// COOKIE CONFIGURATION TYPE
+// CONFIGURATION COOKIES HELPER
 // =============================================================================
-
-interface CookieOptions {
+interface CookieConfig {
   httpOnly: boolean;
   secure: boolean;
   sameSite: 'strict' | 'lax' | 'none';
-  domain?: string;
   path: string;
+  domain?: string;
   maxAge: number;
 }
 
-// =============================================================================
-// CONTROLLER
-// =============================================================================
-
 @Controller('auth')
 export class AuthController {
-  // Configuration centralisée
   private readonly isProduction: boolean;
   private readonly frontendUrl: string;
   private readonly cookieDomain: string | undefined;
@@ -97,91 +91,83 @@ export class AuthController {
     private readonly requestContextService: RequestContextService,
   ) {
     this.isProduction = process.env.NODE_ENV === 'production';
-    this.frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    this.frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-    // ✅ IMPORTANT: Cookie domain pour partage entre alimana.cc et api.alimana.cc
-    // Le point devant (.alimana.cc) permet le partage avec tous les sous-domaines
-    this.cookieDomain =
-      process.env.COOKIE_DOMAIN || (this.isProduction ? '.alimana.cc' : undefined);
-
-    this.logger.log(
-      `AuthController initialized - Production: ${this.isProduction}, Frontend: ${this.frontendUrl}, Cookie Domain: ${this.cookieDomain}`,
-    );
+    // En production, si tu utilises un sous-domaine commun (api.alimana.cc),
+    // définis le domain pour partager les cookies
+    // Sinon, laisse undefined pour l'option "tokens dans body"
+    this.cookieDomain = this.isProduction
+      ? process.env.COOKIE_DOMAIN // ex: '.alimana.cc' si tu as api.alimana.cc
+      : undefined;
   }
 
-  // ===========================================================================
-  // HELPER: Configuration des cookies
-  // ===========================================================================
-
   /**
-   * Génère la configuration des cookies d'authentification
-   * Centralisé pour éviter les incohérences
+   * Helper pour générer la configuration des cookies
    */
-  private getCookieOptions(maxAge: number): CookieOptions {
-    const options: CookieOptions = {
-      httpOnly: true, // ✅ Protection XSS
-      secure: this.isProduction, // ✅ HTTPS only en prod
-      sameSite: this.isProduction ? 'lax' : 'lax', // ✅ 'lax' pour même domaine racine
+  private getCookieConfig(maxAge: number): CookieConfig {
+    const config: CookieConfig = {
+      httpOnly: true,
+      secure: this.isProduction,
+      sameSite: this.isProduction ? 'none' : 'lax',
       path: '/',
       maxAge,
     };
 
-    // ✅ CRUCIAL: Ajoute le domain pour le partage cross-subdomain
+    // Ajoute le domain seulement si défini (pour sous-domaine commun)
     if (this.cookieDomain) {
-      options.domain = this.cookieDomain;
+      config.domain = this.cookieDomain;
     }
 
-    return options;
+    return config;
   }
 
   /**
-   * Définit les cookies d'authentification (access + refresh)
+   * Helper pour définir les cookies d'authentification
    */
   private setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
-    const accessMaxAge = Number(this.configService.jwtAccesTokenExpirationMs);
-    const refreshMaxAge = Number(this.configService.jwtRefrehTokenExpirationMs);
+    const accessTokenExpirationMs = this.configService.jwtAccesTokenExpirationMs;
+    const refreshTokenExpirationMs = this.configService.jwtRefrehTokenExpirationMs;
 
-    res.cookie('access_token', accessToken, this.getCookieOptions(accessMaxAge));
-    res.cookie('refresh_token', refreshToken, this.getCookieOptions(refreshMaxAge));
-
-    this.logger.log(`Auth cookies set with domain: ${this.cookieDomain || 'default'}`);
+    res.cookie('access_token', accessToken, this.getCookieConfig(Number(accessTokenExpirationMs)));
+    res.cookie(
+      'refresh_token',
+      refreshToken,
+      this.getCookieConfig(Number(refreshTokenExpirationMs)),
+    );
   }
 
   /**
-   * Efface tous les cookies d'authentification
+   * Helper pour effacer les cookies d'authentification
    */
   private clearAuthCookies(res: Response): void {
-    const clearOptions = {
+    const clearConfig = {
       httpOnly: true,
       secure: this.isProduction,
-      sameSite: 'lax' as const,
+      sameSite: this.isProduction ? 'none' : 'lax',
       path: '/',
       ...(this.cookieDomain && { domain: this.cookieDomain }),
-    };
+    } as const;
 
-    res.clearCookie('access_token', clearOptions);
-    res.clearCookie('refresh_token', clearOptions);
-    res.clearCookie('store_access_token', clearOptions);
-
-    this.logger.log('Auth cookies cleared');
+    res.clearCookie('access_token', clearConfig);
+    res.clearCookie('refresh_token', clearConfig);
+    res.clearCookie('store_access_token', clearConfig);
   }
 
   // ===========================================================================
   // REGISTER
   // ===========================================================================
-
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const user = await this.authService.registerLocal(registerDto);
     const { accessToken, refreshToken } = await this.authService.generateTokens(user);
 
-    // ✅ Set cookies avec la bonne configuration
+    // Set cookies (fonctionne si même domaine ou sous-domaine)
     this.setAuthCookies(res, accessToken, refreshToken);
 
     this.logger.log(`New user registered: ${user.email}`);
 
-    // ✅ Retourne aussi les tokens dans le body (backup cross-domain)
+    // ✅ IMPORTANT: Retourne aussi les tokens dans le body pour cross-domain
     return {
       message: 'Registration successful',
       accessToken,
@@ -198,7 +184,6 @@ export class AuthController {
   // ===========================================================================
   // GOOGLE OAUTH
   // ===========================================================================
-
   @Get('google')
   @UseGuards(AuthGuard('google'))
   async googleAuth() {
@@ -209,40 +194,33 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleAuthCallback(
     @Req() req: GoogleAuthRequest,
-    @Res() res: Response, // Note: pas passthrough car on fait un redirect
+    @Res() res: Response, // Note: pas passthrough pour pouvoir redirect
   ) {
     const user = req.user;
     const { accessToken, refreshToken } = await this.authService.generateTokens(user);
 
-    // ✅ Set cookies avec la bonne configuration
+    // Set cookies (au cas où même domaine)
     this.setAuthCookies(res, accessToken, refreshToken);
 
     this.logger.log(`User authenticated via Google: ${user.email}`);
 
-    // ✅ Détermine si c'est un nouvel utilisateur (créé dans les 60 dernières secondes)
+    // ✅ SOLUTION CROSS-DOMAIN: Passe les tokens via URL params
+    // Le frontend les récupère et les stocke dans localStorage
+    const redirectUrl = new URL('/callback', this.frontendUrl);
+    redirectUrl.searchParams.set('accessToken', accessToken);
+    redirectUrl.searchParams.set('refreshToken', refreshToken);
+
+    // Optionnel: indique si c'est un nouvel utilisateur
     const isNewUser =
-      user.createdAt && new Date().getTime() - new Date(user.createdAt).getTime() < 60000;
+      user.createdAt && new Date().getTime() - new Date(user.createdAt).getTime() < 60000; // < 1 min
+    redirectUrl.searchParams.set('isNewUser', String(isNewUser));
 
-    // ✅ Redirect vers la bonne page selon le type d'utilisateur
-    // Option 1: Redirect simple (les cookies sont déjà set)
-    if (isNewUser) {
-      res.redirect(`${this.frontendUrl}/create-store`);
-    } else {
-      res.redirect(`${this.frontendUrl}/select-store`);
-    }
-
-    // Option 2 (alternative): Passer les tokens via URL si les cookies ne marchent pas
-    // const redirectUrl = new URL('/auth/callback', this.frontendUrl);
-    // redirectUrl.searchParams.set('accessToken', accessToken);
-    // redirectUrl.searchParams.set('refreshToken', refreshToken);
-    // redirectUrl.searchParams.set('isNewUser', String(isNewUser));
-    // res.redirect(redirectUrl.toString());
+    res.redirect(redirectUrl.toString());
   }
 
   // ===========================================================================
   // LOGIN
   // ===========================================================================
-
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('local'))
@@ -250,12 +228,11 @@ export class AuthController {
     const user = req.user;
     const { accessToken, refreshToken } = await this.authService.generateTokens(user);
 
-    // ✅ Set cookies avec la bonne configuration
     this.setAuthCookies(res, accessToken, refreshToken);
 
     this.logger.log(`User logged in: ${user.email}`);
 
-    // ✅ Retourne aussi les tokens dans le body (backup cross-domain)
+    // ✅ Retourne les tokens dans le body pour cross-domain
     return {
       message: 'Login successful',
       accessToken,
@@ -272,7 +249,6 @@ export class AuthController {
   // ===========================================================================
   // MY STORES
   // ===========================================================================
-
   @Get('my-stores')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -285,7 +261,6 @@ export class AuthController {
   // ===========================================================================
   // SELECT STORE
   // ===========================================================================
-
   @Post('select-store')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -300,12 +275,11 @@ export class AuthController {
       selectStoreDto.storeUserId,
     );
 
-    // ✅ Set cookies avec la bonne configuration
     this.setAuthCookies(res, accessToken, refreshToken);
 
     this.logger.log(`User ${userId} selected store ${selectStoreDto.storeUserId}`);
 
-    // ✅ Retourne aussi le token dans le body
+    // ✅ Retourne le token pour cross-domain
     return {
       message: 'Store selected successfully',
       accessToken,
@@ -316,7 +290,6 @@ export class AuthController {
   // ===========================================================================
   // REFRESH TOKEN
   // ===========================================================================
-
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(
@@ -324,8 +297,7 @@ export class AuthController {
     @Body() body: { refreshToken?: string },
     @Res({ passthrough: true }) res: Response,
   ) {
-    // ✅ Accepte le refresh token depuis le cookie OU le body (flexibilité)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    // ✅ Accepte le refresh token depuis le cookie OU le body
     const refreshToken = req.cookies?.['refresh_token'] || body.refreshToken;
 
     if (!refreshToken || typeof refreshToken !== 'string') {
@@ -337,12 +309,11 @@ export class AuthController {
     const { accessToken, refreshToken: newRefreshToken } =
       await this.authService.refreshTokens(refreshToken);
 
-    // ✅ Set cookies avec la bonne configuration
     this.setAuthCookies(res, accessToken, newRefreshToken);
 
     this.logger.log('Tokens refreshed successfully');
 
-    // ✅ Retourne aussi les tokens dans le body
+    // ✅ Retourne les tokens pour cross-domain
     return {
       message: 'Tokens refreshed successfully',
       accessToken,
@@ -353,7 +324,6 @@ export class AuthController {
   // ===========================================================================
   // LOGOUT
   // ===========================================================================
-
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(
@@ -361,15 +331,12 @@ export class AuthController {
     @Body() body: { refreshToken?: string },
     @Res({ passthrough: true }) res: Response,
   ) {
-    // ✅ Accepte le refresh token depuis le cookie OU le body
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const refreshToken = req.cookies?.['refresh_token'] || body.refreshToken;
 
     if (refreshToken && typeof refreshToken === 'string') {
       await this.authService.logout(refreshToken);
     }
 
-    // ✅ Efface tous les cookies avec la bonne configuration
     this.clearAuthCookies(res);
 
     return { message: 'Logged out successfully' };
@@ -378,7 +345,6 @@ export class AuthController {
   // ===========================================================================
   // USER PROFILE ENDPOINTS
   // ===========================================================================
-
   @Get('user/me')
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: JwtAuthRequest) {
