@@ -134,7 +134,6 @@ export class AnalyticsService {
     const todayRevenue = today?.revenue ? parseFloat(today.revenue) : 0;
     const yesterdayRevenue = yesterday?.revenue ? parseFloat(yesterday.revenue) : 0;
 
-    console.log(todayRevenue);
     return {
       revenue_today: todayRevenue,
       revenue_yesterday: yesterdayRevenue,

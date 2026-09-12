@@ -34,39 +34,38 @@ export class MyLoggerService extends ConsoleLogger {
   // Log an informational message (calls logToFile and the base logger)
   log(message: any, context?: string) {
     const entry = `${context ? `[${context}] ` : ''}${message}`;
-    this.logToFile(entry, 'info');
+    void this.logToFile(entry, 'info');
     super.log(message, context);
   }
 
   // Log an error message (calls logToFile and the base logger)
   error(message: any, stack?: string, context?: string) {
-    // Construire l'entrée de log pour le fichier
     let entry = `${context ? `[${context}] ` : ''}${message}`;
     if (stack) {
-      entry += `\nStack: ${stack}`; // Ajoute la stack sur une nouvelle ligne pour la lisibilité
+      entry += `\nStack: ${stack}`;
     }
-    this.logToFile(entry, 'error');
-    super.error(message, stack, context); // Appelle la méthode de base avec tous les arguments
+    void this.logToFile(entry, 'error');
+    super.error(message, stack, context);
   }
 
   // Log a warning message (calls logToFile and the base logger)
   warn(message: any, context?: string) {
     const entry = `${context ? `[${context}] ` : ''}${message}`;
-    this.logToFile(entry, 'warn');
+    void this.logToFile(entry, 'warn');
     super.warn(message, context);
   }
 
   // Log a debug message (calls logToFile and the base logger)
   debug(message: any, context?: string) {
     const entry = `${context ? `[${context}] ` : ''}${message}`;
-    this.logToFile(entry, 'debug');
+    void this.logToFile(entry, 'debug');
     super.debug(message, context);
   }
 
   // Log a verbose message (calls logToFile and the base logger)
   verbose(message: any, context?: string) {
     const entry = `${context ? `[${context}] ` : ''}${message}`;
-    this.logToFile(entry, 'verbose');
+    void this.logToFile(entry, 'verbose');
     super.verbose(message, context);
   }
 }

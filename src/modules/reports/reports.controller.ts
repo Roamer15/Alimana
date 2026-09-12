@@ -28,7 +28,10 @@ export class ReportsController {
 
   @Get('inventory/csv')
   @Header('Content-Type', 'text/csv')
-  @Header('Content-Disposition', 'attachment; filename="inventory-summary.csv"')
+  @Header(
+    'Content-Disposition',
+    `attachment; filename="inventory-summary - ${new Date().getDate()}.csv"`,
+  )
   async getInventoryReportCSV(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Res() res: Response,
@@ -47,14 +50,16 @@ export class ReportsController {
 
   @Get('inventory/pdf')
   @Header('Content-Type', 'application/pdf')
-  @Header('Content-Disposition', 'attachment; filename="executive-summary.pdf"')
+  @Header(
+    'Content-Disposition',
+    `attachment; filename="executive-summary - ${new Date().getDate()}.pdf"`,
+  )
   async getInventoryReportPDF(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Res() res: Response,
   ) {
     const inventorySummary = await this.reportsService.getInventoryReport(storeId);
 
-    // Generate PDF buffer from summary object (assuming you have a helper for this)
     const pdfBuffer = await this.reportsService.generateExecutiveSummaryPDFBuffer(inventorySummary);
 
     res.end(pdfBuffer);

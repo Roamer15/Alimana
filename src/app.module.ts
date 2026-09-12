@@ -9,8 +9,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { RolesModule } from './modules/roles/roles.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
-
-// Importez les modules du contexte
 import { ClsModule } from 'nestjs-cls';
 import { RequestContextModule } from './common/context/request-context/request-context.module';
 import { PayloadContextMiddleware } from './common/middleware/payload-context.middleware';
@@ -28,7 +26,6 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { PaymentAnalyticsModule } from './modules/payment-analytics/payment-analytics.module';
 import { CloudinaryModule } from './common/cloudinary/cloudinary.module';
-// Importez votre middleware de payload
 
 @Module({
   imports: [
@@ -42,12 +39,11 @@ import { CloudinaryModule } from './common/cloudinary/cloudinary.module';
     SalesModule,
     InvitationModule,
     PaymentMethodModule,
-    // Configuration de ClsModule au niveau racine
+    // Configuration de ClsModule at root level
     ClsModule.forRoot({
-      global: true, // Rend ClsModule globalement disponible
+      global: true, // makes ClsModule global
       middleware: {
-        mount: true, // Monte le middleware CLS pour encapsuler chaque requête
-        // Options supplémentaires, par exemple pour générer un ID de requête unique
+        mount: true,
         generateId: true,
         idGenerator: (req: Request) =>
           // eslint-disable-next-line @typescript-eslint/no-unsafe-return

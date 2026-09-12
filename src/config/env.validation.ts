@@ -13,17 +13,17 @@ export const validationSchema = Joi.object({
   JWT_EXPIRES_IN: Joi.string().default('1d'),
 
   GOOGLE_CLIENT_ID: Joi.string().required().messages({
-    'any.required': 'GOOGLE_CLIENT_ID est requis',
-    'string.empty': 'GOOGLE_CLIENT_ID ne peut pas être vide',
+    'any.required': 'GOOGLE_CLIENT_ID is required',
+    'string.empty': 'GOOGLE_CLIENT_ID cannot be empty',
   }),
   GOOGLE_CLIENT_SECRET: Joi.string().required().messages({
-    'any.required': 'GOOGLE_CLIENT_SECRET est requis',
-    'string.empty': 'GOOGLE_CLIENT_SECRET ne peut pas être vide',
+    'any.required': 'GOOGLE_CLIENT_SECRET is required',
+    'string.empty': 'GOOGLE_CLIENT_SECRET cannot be empty',
   }),
   GOOGLE_CALLBACK_URL: Joi.string().uri().required().messages({
-    'any.required': 'GOOGLE_CALLBACK_URL est requis',
-    'string.empty': 'GOOGLE_CALLBACK_URL ne peut pas être vide',
-    'string.uri': 'GOOGLE_CALLBACK_URL doit être une URL valide',
+    'any.required': 'GOOGLE_CALLBACK_URL is required',
+    'string.empty': 'GOOGLE_CALLBACK_URL cannot be empty',
+    'string.uri': 'GOOGLE_CALLBACK_URL must be a valid URL',
   }),
 
   // // Mailing

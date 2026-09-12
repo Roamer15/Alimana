@@ -56,9 +56,9 @@ export class InvitationController {
   }
 
   /**
-   * Accepte une invitation.
-   * Cette route est publique (non protégée par StoreJwtGuard) car l'utilisateur n'est pas encore authentifié dans la boutique.
-   * Elle retourne les tokens d'authentification après acceptation réussie.
+   * Accept an invitation.
+   * This endpoint is public as the user isn't authenticated to a shop yet.
+   * It returns auth tokens.
    */
   @Post('invitations/accept')
   @HttpCode(HttpStatus.OK)
@@ -89,7 +89,7 @@ export class InvitationController {
     });
 
     return {
-      message: 'Invitation acceptée avec succès. Vous êtes maintenant connecté à la boutique.',
+      message: 'Invitation accepted successfully. You are now connected to the shop.',
     };
   }
 

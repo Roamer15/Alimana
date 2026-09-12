@@ -1,5 +1,4 @@
 import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
-import { Express } from 'express';
 
 @Injectable()
 export class ImageValidationPipe implements PipeTransform {
@@ -10,7 +9,7 @@ export class ImageValidationPipe implements PipeTransform {
 
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Type de fichier non autorisé');
+      throw new BadRequestException('This file format is not accepted');
     }
 
     const maxSizeInBytes = 5 * 1024 * 1024; // 5MB

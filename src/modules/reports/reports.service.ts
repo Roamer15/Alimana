@@ -139,24 +139,6 @@ export class ReportsService {
     let page = pdfDoc.addPage([pageWidth, pageHeight]);
     let y = pageHeight - margin;
 
-    // Add company logo (if available)
-    try {
-      if (summary.companyLogo) {
-        const logoImage = await pdfDoc.embedPng(summary?.companyLogo);
-        const logoDims = logoImage.scale(0.5);
-        page.drawImage(logoImage, {
-          x: margin,
-          y: y - logoDims.height,
-          width: logoDims.width,
-          height: logoDims.height,
-        });
-        y -= logoDims.height + 30;
-      }
-    } catch (e) {
-      console.warn('Could not embed logo:', e);
-    }
-
-    // Report title
     page.drawText('EXECUTIVE SUMMARY', {
       x: margin,
       y,
@@ -206,7 +188,7 @@ export class ReportsService {
     let columnY = y;
 
     Object.entries(summary).forEach(([key, value]) => {
-      if (key === 'insights' || key === 'companyLogo') return;
+      if (key === 'insights') return;
 
       const label = `${this.capitalizeFirstLetter(key.replace(/([A-Z])/g, ' $1'))}: `;
       const text = typeof value === 'string' ? value : String(value);
@@ -463,7 +445,6 @@ export class ReportsService {
       ],
       order: { quantityInStock: 'ASC' },
     });
-    console.log(inventoryItems);
     // 2. Transform data for AI consumption
     const aiPayload = inventoryItems.map((item) => ({
       product_id: item.id,
@@ -481,8 +462,6 @@ export class ReportsService {
         : null,
       stock_status: this.getStockStatus(item.quantityInStock),
     }));
-
-    console.log(aiPayload);
 
     // 3. Add summary statistics
     const summary = {
@@ -514,7 +493,6 @@ export class ReportsService {
       If no data is provided answer accordingly witha beffiting response. Also consider warning the user on products that are soon out of stock if the number of the product is below 10
     `,
     };
-    console.log(aiRequest);
     // 5. Get AI insights with error handling
     try {
       const textAiRequest = JSON.stringify(aiRequest);
@@ -526,8 +504,7 @@ export class ReportsService {
         generated_at: new Date().toISOString(),
       };
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-      this.logger.error('Failed to generate AI insights', error.stack);
+      this.logger.error('Failed to generate AI insights', (error as Error).stack);
       throw new Error('Inventory analysis temporarily unavailable');
     }
   }
